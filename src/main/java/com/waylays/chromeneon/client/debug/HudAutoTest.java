@@ -88,7 +88,8 @@ public final class HudAutoTest {
             rules.getRule(GameRules.RULE_DAYLIGHT).set(false, null);
             rules.getRule(GameRules.RULE_DOMOBSPAWNING).set(false, null);
             rules.getRule(GameRules.RULE_WEATHER_CYCLE).set(false, null);
-            LevelSettings settings = new LevelSettings("chromeneon_autotest", GameType.SURVIVAL, false, Difficulty.NORMAL,
+            // A name of its own each run: map markers are kept per world name
+            LevelSettings settings = new LevelSettings("chromeneon_autotest_" + System.currentTimeMillis(), GameType.SURVIVAL, false, Difficulty.NORMAL,
                     true, rules, WorldDataConfiguration.DEFAULT);
             mc.createWorldOpenFlows().createFreshLevel("chromeneon_autotest_" + System.currentTimeMillis(), settings,
                     new WorldOptions(20261125L, false, false), WorldPresets::createNormalWorldDimensions, mc.screen);
@@ -198,6 +199,9 @@ public final class HudAutoTest {
         });
         step(60, mc -> {
             look(mc, 0, 8);
+            // Plants cleared from the arena drop seeds the player picks up: not part of the picture
+            command(mc, "kill @e[type=minecraft:item]");
+            command(mc, "clear @s minecraft:wheat_seeds");
             HudPerf.reset();
         });
         step(30, mc -> shot(mc, "01_overview"));
@@ -327,16 +331,24 @@ public final class HudAutoTest {
         step(2, mc -> ClientConfig.HUD_ENABLED.set(true));
     }
 
-    private static int pendingScale;
+    private static int pendingScale, pendingW, pendingH, retries;
 
     /** Asks for a window size; the GUI scale is applied by {@link #applyScale} once the window really has it. */
     private static void resize(Minecraft mc, int w, int h, int gui) {
         GLFW.glfwSetWindowSize(mc.getWindow().getWindow(), w, h);
         pendingScale = gui;
+        pendingW = w;
+        pendingH = h;
+        retries = 0;
     }
 
     /** The game caps the GUI scale to what the current window allows, so it is set after the resize. */
     private static void applyScale(Minecraft mc) {
+        if ((mc.getWindow().getWidth() != pendingW || mc.getWindow().getHeight() != pendingH) && retries++ < 20) {
+            // The window has not taken its new size yet: try again a little later
+            STEPS.add(index, new Step(5, HudAutoTest::applyScale));
+            return;
+        }
         mc.options.guiScale().set(pendingScale);
         mc.resizeDisplay();
         if (mc.getWindow().getGuiScale() != pendingScale) fail("GUI scale " + pendingScale + " not applied, got " + mc.getWindow().getGuiScale());

@@ -19,7 +19,7 @@ l'IA de biopuce. Mod indépendant (aucune dépendance à Arcanes Oubliés ni à 
   persistantes du joueur, RAM, synchronisation, configurations, commandes. Voir [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 - **Phase 2, HUD** : santé en chevrons, armure, cellules de RAM, horloge du monde, indicateurs de statut,
   mini-carte réelle, ciblage et scan de vraies cibles, notifications à priorités, appel entrant, effets de dégâts,
-  de santé critique et de glitch, deux polices et 42 icônes originales, entièrement configurable.
+  de santé critique et de glitch, typographie vectorielle (Rajdhani et Share Tech Mono, licence OFL) et 42 icônes vectorielles originales, entièrement configurable.
   Voir [docs/HUD.md](docs/HUD.md) et les [captures réelles](docs/screenshots/).
 
 La suite est dans [docs/ROADMAP.md](docs/ROADMAP.md), avec ce qui n'est pas encore développé.
@@ -71,5 +71,5 @@ cibles, vérifie la disposition à 7 tailles d'écran, mesure le temps de rendu 
 ## Assets
 
 Textures, polices et icônes sont générées par `tools/textures.py` et `tools/hud_assets.py` (Python 3 + Pillow)
-avec la palette du HUD.
+avec la palette du HUD. Les polices Rajdhani et Share Tech Mono (SIL Open Font License 1.1) sont dans `tools/fonts` et embarquées avec leurs licences.
 Le mod n'utilise que des assets originaux : aucun son, texture ou police tirés de Cyberpunk 2077 ou d'autres jeux.

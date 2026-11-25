@@ -8,65 +8,121 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 
-import java.text.Normalizer;
 import java.util.Locale;
-import java.util.regex.Pattern;
 
 /**
- * The HUD's two typefaces: {@link #HUD} (5x7, cut corners, for names and values) and {@link #MICRO} (3x5, for
- * technical labels). Both are uppercase by design. Long free text (notification bodies) keeps the game font.
+ * The HUD's typography: vector fonts (Rajdhani for names and values, Share Tech Mono for data and labels) in six
+ * styles. Each style exists once per GUI scale, rasterised at that scale, so text is drawn one texel per screen
+ * pixel: sharp at any size, never pixelated. The top of the capitals sits at the drawing position.
  */
 public final class HudText {
-    public static final ResourceLocation HUD = ChromeNeon.id("hud");
-    public static final ResourceLocation MICRO = ChromeNeon.id("micro");
-    private static final Style HUD_STYLE = Style.EMPTY.withFont(HUD);
-    private static final Style MICRO_STYLE = Style.EMPTY.withFont(MICRO);
-    private static final Pattern MARKS = Pattern.compile("\\p{M}+");
+    public enum Kind {
+        /** Tiny technical labels (monospace). */
+        LABEL("label", 3.5F),
+        /** Data and numbers in lists (monospace). */
+        DATA("data", 4.2F),
+        /** Running text (notification bodies). */
+        BODY("body", 5.14F),
+        /** Names and titles. */
+        TITLE("title", 6.43F),
+        /** Key values (health, clock). */
+        VALUE("value", 9F),
+        /** Large display numbers. */
+        DISPLAY("display", 12.86F);
+
+        private final String id;
+        private final float cap;
+
+        Kind(String id, float cap) {
+            this.id = id;
+            this.cap = cap;
+        }
+
+        /** Height of the capitals, in GUI pixels. */
+        public float cap() {
+            return cap;
+        }
+    }
+
+    private static int variant = 2;
 
     private HudText() {}
+
+    /** Picks the rasterisation matching the current scale (GUI scale times HUD scale). */
+    public static void setScale(double effectiveScale) {
+        variant = Math.clamp(Math.round((float) effectiveScale), 1, 6);
+    }
 
     public static Font font() {
         return Minecraft.getInstance().font;
     }
 
-    public static Component hud(String text) {
-        return Component.literal(text.toUpperCase(Locale.ROOT)).withStyle(HUD_STYLE);
+    public static Component of(Kind kind, String text) {
+        ResourceLocation id = ChromeNeon.id(kind.id + "_" + variant);
+        return Component.literal(text).withStyle(Style.EMPTY.withFont(id));
     }
 
-    public static Component hud(Component text) {
-        return hud(text.getString());
+    public static Component of(Kind kind, Component text) {
+        return of(kind, text.getString());
     }
 
-    /** Micro labels have no accented glyphs: accents are dropped rather than falling back to another font. */
-    public static Component micro(String text) {
-        String plain = MARKS.matcher(Normalizer.normalize(text, Normalizer.Form.NFD)).replaceAll("");
-        return Component.literal(plain.toUpperCase(Locale.ROOT)).withStyle(MICRO_STYLE);
+    /** Uppercase label: tiny monospace, for technical tags. */
+    public static Component label(String text) {
+        return of(Kind.LABEL, text.toUpperCase(Locale.ROOT));
     }
 
-    public static Component micro(Component text) {
-        return micro(text.getString());
+    public static Component label(Component text) {
+        return label(text.getString());
     }
 
-    public static int width(Component text) {
+    public static Component data(String text) {
+        return of(Kind.DATA, text.toUpperCase(Locale.ROOT));
+    }
+
+    public static Component data(Component text) {
+        return data(text.getString());
+    }
+
+    public static Component title(String text) {
+        return of(Kind.TITLE, text.toUpperCase(Locale.ROOT));
+    }
+
+    public static Component title(Component text) {
+        return title(text.getString());
+    }
+
+    public static Component body(Component text) {
+        return of(Kind.BODY, text);
+    }
+
+    public static Component value(String text) {
+        return of(Kind.VALUE, text);
+    }
+
+    public static Component display(String text) {
+        return of(Kind.DISPLAY, text);
+    }
+
+    public static float width(Component text) {
         return font().width(text);
     }
 
     /**
-     * Draws at a fractional position (animations move text by sub-pixels), over a soft dark offset copy so light
-     * text stays readable on snow or sky. Dark text (on a bright tab) gets no shadow.
+     * Draws at a fractional position over a one-screen-pixel dark offset copy, so light text stays readable on snow
+     * or sky without a heavy shadow. Dark text gets no shadow.
      */
-    public static void draw(GuiGraphics g, Component text, float x, float y, int argb) {
+    public static void draw(GuiGraphics g, Component text, float x, float y, int argb, float px) {
         float alpha = NeonPalette.alphaOf(argb);
         if (alpha < 0.02F) return;
-        g.pose().pushPose();
-        g.pose().translate(x, y, 0);
         float lum = 0.3F * NeonPalette.red(argb) + 0.59F * NeonPalette.green(argb) + 0.11F * NeonPalette.blue(argb);
-        if (lum > 0.35F) g.drawString(font(), text, 1, 1, NeonPalette.alpha(NeonPalette.VOID, 0.55F * alpha), false);
-        g.drawString(font(), text, 0, 0, argb, false);
-        g.pose().popPose();
+        if (lum > 0.35F) drawFlat(g, text, x + px, y + px, NeonPalette.alpha(NeonPalette.VOID, 0.6F * alpha));
+        drawFlat(g, text, x, y, argb);
     }
 
-    /** Without the shadow: for text on solid panels. */
+    public static void drawRight(GuiGraphics g, Component text, float right, float y, int argb, float px) {
+        draw(g, text, right - width(text), y, argb, px);
+    }
+
     public static void drawFlat(GuiGraphics g, Component text, float x, float y, int argb) {
         if (NeonPalette.alphaOf(argb) < 0.02F) return;
         g.pose().pushPose();
@@ -75,20 +131,15 @@ public final class HudText {
         g.pose().popPose();
     }
 
-    public static void drawRight(GuiGraphics g, Component text, float right, float y, int argb) {
-        draw(g, text, right - width(text), y, argb);
-    }
-
-    /** Neon text: a faint halo one pixel around, then the text itself. Reserved for the few values read first. */
-    public static void drawGlow(GuiGraphics g, Component text, float x, float y, int argb, float glow) {
-        int halo = NeonPalette.fade(argb, 0.22F * glow);
-        if (glow > 0.01F) {
-            drawFlat(g, text, x - 1, y, halo);
-            drawFlat(g, text, x + 1, y, halo);
-            drawFlat(g, text, x, y - 1, halo);
-            drawFlat(g, text, x, y + 1, halo);
-        }
-        draw(g, text, x, y, argb);
+    /** Neon text: faint copies around it, then the text. Reserved for the few values read first. */
+    public static void drawGlow(GuiGraphics g, Component text, float x, float y, int argb, float px) {
+        int halo = NeonPalette.fade(argb, 0.18F);
+        float d = 2F * px;
+        drawFlat(g, text, x - d, y, halo);
+        drawFlat(g, text, x + d, y, halo);
+        drawFlat(g, text, x, y - d, halo);
+        drawFlat(g, text, x, y + d, halo);
+        draw(g, text, x, y, argb, px);
     }
 
     /** First {@code fraction} of the text, for data that types itself in. */

@@ -1,39 +1,45 @@
 # HUD Chrome Néon (phase 2)
 
-## Langage graphique
+## Langage graphique (refonte)
+
+La première version du HUD dessinait tout sur la grille de pixels GUI de Minecraft : à l'échelle 4, un trait « fin »
+faisait 4 pixels écran, et les polices bitmap 5×7 et les icônes 9×9 étaient agrandies comme des textures du jeu.
+Le résultat ressemblait à une interface Minecraft recolorée. La refonte change le langage, pas seulement les
+couleurs :
+
+- **Pixel écran réel.** Toutes les formes sont des polygones en coordonnées flottantes ; les filets font
+  exactement un pixel écran à toutes les échelles (`HudFrame.px`).
+- **Typographie vectorielle.** Rajdhani (titres, valeurs) et Share Tech Mono (données, étiquettes), licence SIL OFL
+  1.1, en six styles (`label`, `data`, `body`, `title`, `value`, `display`). Chaque style est déclaré pour chaque
+  échelle GUI, rasterisé à cette échelle : un texel par pixel écran, texte net, jamais pixelisé.
+- **Aucun panneau fermé.** Les blocs de données reposent sur des voiles sombres à bords adoucis
+  (`HudDraw.veil`), reliés par des rails, des branches et des lignes de rappel terminées par des nœuds.
+- **Formes.** Santé en segments obliques fins avec reflet et chevron de tête, armure en lames d'acier,
+  RAM en cellules obliques lumineuses, carte ronde dans une boussole graduée qui tourne, effets dans des anneaux
+  qui se vident, crochets de ciblage d'un pixel avec accent, cadres biseautés.
+- **Icônes.** 42 icônes au trait redessinées en vectoriel, anticrénelées, affichées avec filtrage linéaire.
+- **Couleurs** inchangées dans leurs rôles :
 
 | Rôle | Couleur | Usage |
 |---|---|---|
-| Système | violet néon `#B026FF` | cadres, santé, onglets, accents |
+| Système | violet néon `#B026FF` | santé, rails, accents |
 | Données | cyan `#1EF2FF` | RAM, informations, valeurs secondaires |
-| Essentiel | blanc `#F5F2FF` | valeurs lues en premier (noms, heure) |
-| Danger | orange `#FF8A1F` / rouge `#FF2B4E` | alertes, dégâts, hostiles, erreurs |
-| Fond | noir profond `#06040C` | panneaux semi-transparents, jamais opaques |
+| Essentiel | blanc `#F5F2FF` | valeurs lues en premier |
+| Danger | orange `#FF8A1F` / rouge `#FF2B4E` | alertes, dégâts, hostiles |
+| Fond | noir profond `#06040C` | voiles, jamais opaques |
 
-- **Angles coupés asymétriques** partout : en haut à gauche et en bas à droite, sur les panneaux, la mini-carte et
-  même dans les deux polices.
-- **Santé** en chevrons, **armure** en plaques inclinées, **RAM** en cellules-puces : trois formes distinctes.
-- **Typographie originale** (dessinée pour le mod, `tools/hud_assets.py`) : `hud` (5×7, chiffres tabulaires,
-  accents français) pour les noms et valeurs, `micro` (3×5) pour les étiquettes techniques. Les textes libres
-  longs (corps de notification) gardent la police du jeu pour rester lisibles.
-- **42 icônes 9×9 originales**, blanches, teintées au rendu.
-- **Hiérarchie** : les données courantes restent discrètes ; seules les alertes deviennent agressives (rouge,
-  clignotement, glitch). Le glitch n'est jamais permanent (20 ticks maximum, suivi d'un temps de recharge).
-- **Asymétrie** : bloc vitals en haut à gauche avec armure et RAM décalées, navigation en haut à droite, appels
-  au milieu à droite, notifications sous les vitals.
-
-Toutes les formes sont de vrais polygones (`client/hud/draw/HudDraw`), pas des empilements de rectangles :
-positions flottantes, donc animations fluides au sous-pixel.
+- **Hiérarchie** : les données courantes restent discrètes, seules les alertes deviennent agressives. Le glitch
+  n'est jamais permanent (20 ticks maximum, puis temps de recharge).
 
 ## Composants
 
 | Composant | Classe(s) | Ce qu'il fait réellement |
 |---|---|---|
-| Santé | `vitals/HealthBar`, `VitalsTracker` | chevrons ; perte : bloc blanc qui refroidit en orange et se vide ; soin : balayage cyan ; absorption : chevrons creux ; ≤ 30 % : rouge + battement + étiquette CRITIQUE (hystérésis jusqu'à 36 %) |
-| Armure | `vitals/ArmorBar` | plaques acier (2 points chacune), robustesse affichée ; gain : flash cyan + soulèvement ; perte : plaques orange qui s'éteignent |
+| Santé | `vitals/HealthBar`, `VitalsTracker` | grand chiffre, un segment oblique par point de vie, chevron de tête ; perte : bloc blanc qui refroidit en orange et se vide ; soin : balayage cyan ; absorption : segments ouverts ; ≤ 30 % : rouge + battement + étiquette CRITIQUE (hystérésis jusqu'à 36 %) |
+| Armure | `vitals/ArmorBar` | une lame d'acier par point, robustesse affichée ; gain : flash cyan + soulèvement ; perte : lames orange qui s'éteignent |
 | RAM | `vitals/RamCells`, `RamTracker` | cellules disponibles / utilisées, recharge visible dans la cellule suivante (progression synchronisée depuis le serveur et extrapolée), flash blanc à la dépense, apparition des nouvelles cellules, RAM insuffisante : cellules manquantes en rouge + secousse |
 | Horloge | `nav/ClockDisplay` | heure du monde (06:00 au lever), deux-points battant à la seconde réelle, numéro du jour, ligne jour/nuit avec la position du soleil, glissement de l'heure quand elle change ; « --:-- / NO SYNC » dans le Nether et l'End |
-| Statut | `status/StatusGroup`, `Conditions`, `EffectIcons` | états anormaux (feu, gel, oxygène, faim) en puces d'alerte avec libellé et %, effets en icônes propres au mod avec durée qui se vide et niveau ; remplace la liste vanilla |
+| Statut | `status/StatusGroup`, `Conditions`, `EffectIcons` | états anormaux (feu, gel, oxygène, faim) en lignes d'alerte avec libellé et %, effets en icônes du mod dans des anneaux qui se vident avec leur durée, niveau ; remplace la liste vanilla |
 | Mini-carte | `nav/*` | voir ci-dessous |
 | Ciblage / scan | `scan/*` | voir ci-dessous |
 | Notifications | `notify/*` | file à priorités, entrée glissée + balayage + titre tapé, ligne de temps, sortie animée, alertes avec rayures et glitch, notifications à progression (forme des futurs téléversements) |
@@ -46,8 +52,8 @@ Le client connaît les chunks chargés : `TerrainSampler` lit pour chaque colonn
 (`WORLD_SURFACE`) et la `MapColor` du bloc du dessus, par tranches de 4096 colonnes par tick (une passe complète
 en quelques ticks), et suit le joueur en conservant ce qui est déjà connu. Le rendu est stylisé : luminosité du
 terrain en violet, eau en cyan selon la profondeur, lave en orange, relief éclairé du nord-ouest, courbes de niveau
-tous les 8 blocs. L'image est recomposée chaque frame (un texel par pixel GUI) avec rotation, masque des coins coupés
-et lignes de balayage.
+tous les 8 blocs. L'image est recomposée chaque frame (deux texels par pixel GUI, filtrage linéaire) avec rotation,
+en disque au bord adouci, dans une boussole graduée qui tourne avec la vue.
 
 Superpositions : joueur et champ de vision, créatures connues du client (hostiles orange, joueurs blancs, autres
 cyan, repère de hauteur), point d'apparition du monde, lieu de la dernière mort, marqueurs personnels (touche B,
@@ -149,14 +155,16 @@ Mesuré dans cet environnement : rendu logiciel Mesa llvmpipe sous Xvfb, sans ca
   1920x1080 GUI 2 avec HUD à 1,5) : aucun groupe ne sort de l'écran, ne chevauche un autre groupe, ni ne couvre la
   barre d'action, la barre d'expérience, la faim et l'air, ou le viseur. Seule la bande des barres de boss est
   atteinte par la navigation (en haut à droite) : signalé, sans incidence hors combat de boss.
-- Performance (temps CPU du HUD par frame, rendu logiciel, donc pessimiste) : environ 4,6 à 5,7 ms au total selon les passes, dont
-  ~1,6 ms pour la mini-carte (recomposition de l'image chaque frame) ; échantillonnage du terrain 0,5 à 1 ms par tick.
+- Performance (temps CPU du HUD par frame, rendu logiciel, donc pessimiste) : environ 6,7 ms au total après la
+  refonte, dont ~2,8 ms pour la mini-carte (image recomposée chaque frame en double résolution) ;
+  échantillonnage du terrain 0,5 à 1 ms par tick.
   Sur une vraie carte graphique ces chiffres n'ont pas été mesurés.
 - Le premier essai a mis en évidence et fait corriger : une copie d'écran du glitch qui lisait une texture vide
   (remplacée par une copie directe du framebuffer, vérifiée par une capture de la copie), des chevauchements
   (titre et code des notifications, appel et horloge, statut et notifications), l'échelle des décalages avec le HUD.
 
-Les captures de `docs/screenshots/` viennent de ce test (aucune n'est une maquette).
+Les captures de `docs/screenshots/` viennent de ce test (aucune n'est une maquette) ; `avant_apres.png` compare la
+première version et la refonte.
 
 ## Limites connues
 

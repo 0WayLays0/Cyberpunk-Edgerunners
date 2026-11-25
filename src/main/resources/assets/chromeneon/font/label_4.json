@@ -1,0 +1,25 @@
+{
+ "providers": [
+  {
+   "type": "space",
+   "advances": {
+    " ": 1.4
+   }
+  },
+  {
+   "type": "ttf",
+   "file": "chromeneon:share-tech-mono-400.ttf",
+   "size": 5.0,
+   "oversample": 4.0,
+   "shift": [
+    0.0,
+    -3.5
+   ],
+   "skip": ""
+  },
+  {
+   "type": "reference",
+   "id": "minecraft:default"
+  }
+ ]
+}

@@ -1,0 +1,25 @@
+{
+ "providers": [
+  {
+   "type": "space",
+   "advances": {
+    " ": 2.8
+   }
+  },
+  {
+   "type": "ttf",
+   "file": "chromeneon:rajdhani-700.ttf",
+   "size": 10.0,
+   "oversample": 5.0,
+   "shift": [
+    0.0,
+    -0.57
+   ],
+   "skip": ""
+  },
+  {
+   "type": "reference",
+   "id": "minecraft:default"
+  }
+ ]
+}

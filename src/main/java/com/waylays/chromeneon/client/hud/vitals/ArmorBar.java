@@ -8,45 +8,44 @@ import com.waylays.chromeneon.client.hud.theme.NeonPalette;
 import net.minecraft.client.gui.GuiGraphics;
 
 /**
- * Armor: thin slanted plates in steel white, one per two points, distinct from the health chevrons. Plates gained
- * flash cyan and settle; plates lost burn orange and fade.
+ * Armor: a comb of thin slanted steel blades, one per armor point, finer than the health segments. Blades gained
+ * flash cyan and rise into place; blades lost burn orange and fade.
  */
 final class ArmorBar {
-    static final float LABEL_W = 16F, W = 4F, H = 5F, SKEW = 2F, STRIDE = 6F;
+    static final float LABEL_W = 22F, W = 1.2F, H = 4.5F, SKEW = 1.6F, STRIDE = 2.4F;
 
     private ArmorBar() {}
 
-    static int plates(VitalsTracker t) {
-        return Math.clamp((int) Math.ceil(Math.max(20, t.armor) / 2F), 10, 15);
+    static int blades(VitalsTracker t) {
+        return Math.clamp(Math.max(20, t.armor), 20, 30);
     }
 
     static float width(VitalsTracker t) {
-        return LABEL_W + plates(t) * STRIDE + SKEW + 22F;
+        return LABEL_W + blades(t) * STRIDE + SKEW + 22F;
     }
 
     static void draw(GuiGraphics g, HudFrame f, VitalsTracker t, float x, float y, float boot) {
-        HudText.draw(g, HudText.micro("ARM"), x, y, f.c(NeonPalette.LAVENDER, 0.8F));
-        int n = plates(t);
+        float px = f.px;
+        HudText.draw(g, HudText.label("ARMOR"), x, y + 0.5F, f.c(NeonPalette.LAVENDER, 0.85F * boot), px);
+        int n = blades(t);
         float age = f.now - t.armorAt;
         int lit = boot >= 1F ? n : (int) Math.floor(n * boot);
+        float bx = x + LABEL_W;
         for (int i = 0; i < n; i++) {
-            float px = x + LABEL_W + i * STRIDE;
-            float points = Math.clamp(t.armor - i * 2F, 0F, 2F) / 2F;
-            HudDraw.parallelogram(g, px, y, W, H, SKEW, f.c(NeonPalette.STEEL, 0.13F));
-            if (i >= lit) continue;
-            float lo = i * 2F, hi = lo + 2F;
-            boolean gained = t.armor > t.armorFrom && hi > t.armorFrom && lo < t.armor && age < 12F;
-            boolean lost = t.armor < t.armorFrom && hi > t.armor && lo < t.armorFrom && age < 16F;
-            if (points > 0F) {
+            float sx = bx + i * STRIDE;
+            boolean on = i < t.armor;
+            boolean gained = t.armor > t.armorFrom && i >= t.armorFrom && i < t.armor && age < 12F;
+            boolean lost = t.armor < t.armorFrom && i >= t.armor && i < t.armorFrom && age < 16F;
+            if (on && i < lit) {
                 float lift = gained ? (1F - Easing.outCubic(age / 12F)) * 2F : 0F;
                 int color = gained ? NeonPalette.lerp(NeonPalette.CYAN, NeonPalette.STEEL, age / 12F) : NeonPalette.STEEL;
-                HudDraw.parallelogram(g, px, y - lift, W * points, H, SKEW * points, f.c(color));
+                HudDraw.parallelogram(g, sx, y - lift, W, H, SKEW, f.c(color));
+            } else {
+                HudDraw.parallelogram(g, sx, y + H - px * 2, W, px * 2, 0F, f.c(NeonPalette.STEEL, 0.3F));
             }
-            if (lost && points < 1F) {
-                HudDraw.parallelogram(g, px, y, W, H, SKEW, f.c(NeonPalette.ORANGE, 1F - age / 16F));
-            }
+            if (lost) HudDraw.parallelogram(g, sx, y, W, H, SKEW, f.c(NeonPalette.ORANGE, 1F - age / 16F));
         }
-        String value = t.armor + (t.toughness >= 1F ? "  T" + Math.round(t.toughness) : "");
-        HudText.draw(g, HudText.micro(value), x + LABEL_W + n * STRIDE + SKEW + 4F, y, f.c(NeonPalette.STEEL, 0.9F));
+        String value = String.valueOf(t.armor) + (t.toughness >= 1F ? "  T" + Math.round(t.toughness) : "");
+        HudText.draw(g, HudText.data(value), bx + n * STRIDE + SKEW + 4F, y, f.c(NeonPalette.STEEL, 0.9F * boot), px);
     }
 }

@@ -22,12 +22,12 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Status indicators, replacing the vanilla effect list. First row: abnormal states, as alert chips with their
- * label (they matter more). Second row: effects as icon chips with a draining duration line and their level;
- * harmful ones first. Minimal mode keeps the states and the harmful effects only.
+ * Status indicators, replacing the vanilla effect list. First the abnormal states, one line each with their name
+ * (they matter more); then the effects as icons inside rings that drain with their time, harmful ones first, with
+ * their level. No boxes. Minimal mode keeps the states and the harmful effects only.
  */
 public final class StatusGroup extends HudGroup {
-    private static final float CHIP = 13F, GAP = 3F, ROW = 18F;
+    private static final float RING = 7.5F, STRIDE = 19F, ROW = 19F, STATE_ROW = 13F;
     private static final int MAX_CHIPS = 10;
 
     /** Longest duration seen for each running effect, so the line drains from full. */
@@ -61,18 +61,19 @@ public final class StatusGroup extends HudGroup {
     @Override
     protected float width(HudFrame f) {
         float w = 0F;
-        for (Conditions.Condition c : Conditions.of(player())) w += chipWidth(c) + GAP;
-        return Math.max(w, Math.min(effects(f).size(), MAX_CHIPS) * (CHIP + GAP) + 20F);
+        for (Conditions.Condition c : Conditions.of(player())) w = Math.max(w, conditionWidth(c));
+        return Math.max(w, Math.min(effects(f).size(), MAX_CHIPS) * STRIDE + 20F);
     }
 
     @Override
     protected float height(HudFrame f) {
-        boolean states = !Conditions.of(player()).isEmpty(), effects = !effects(f).isEmpty();
-        return (states ? ROW : 0F) + (effects ? ROW : 0F);
+        int states = Conditions.of(player()).size();
+        boolean effects = !effects(f).isEmpty();
+        return states * STATE_ROW + (effects ? ROW : 0F);
     }
 
-    private static float chipWidth(Conditions.Condition c) {
-        return CHIP + HudText.width(HudText.hud(c.label())) + 8F + (Float.isNaN(c.level()) ? 0F : 18F);
+    private static float conditionWidth(Conditions.Condition c) {
+        return 14F + HudText.width(HudText.title(c.label())) + (Float.isNaN(c.level()) ? 8F : 30F);
     }
 
     @Override
@@ -80,44 +81,48 @@ public final class StatusGroup extends HudGroup {
         float boot = boot(f);
         List<Conditions.Condition> states = Conditions.of(player());
         onset.keySet().retainAll(states.stream().map(Conditions.Condition::id).toList());
-        float y = 0F, x = 0F;
+        float y = 0F;
         for (Conditions.Condition c : states) {
             float start = onset.computeIfAbsent(c.id(), k -> f.now);
-            x += drawCondition(g, f, c, x, y, Easing.progress(f.now, start, 8F) * boot) + GAP;
+            drawCondition(g, f, c, y, Easing.progress(f.now, start, 8F) * boot);
+            y += STATE_ROW;
         }
-        if (!states.isEmpty()) y += ROW;
-
         List<MobEffectInstance> effects = effects(f);
         maxDuration.keySet().retainAll(effects.stream().map(MobEffectInstance::getEffect).toList());
-        x = 0F;
+        float x = RING;
         for (int i = 0; i < effects.size() && i < MAX_CHIPS; i++) {
-            drawEffect(g, f, effects.get(i), x, y, boot);
-            x += CHIP + GAP;
+            drawEffect(g, f, effects.get(i), x, y + RING, boot);
+            x += STRIDE;
         }
         if (effects.size() > MAX_CHIPS) {
-            HudText.draw(g, HudText.micro("+" + (effects.size() - MAX_CHIPS)), x + 1, y + 4, f.c(NeonPalette.LAVENDER));
+            HudText.draw(g, HudText.data("+" + (effects.size() - MAX_CHIPS)), x - RING + 1, y + RING - 2, f.c(NeonPalette.LAVENDER), f.px);
         }
     }
 
-    /** An alert chip: framed icon then the label on a tinted band; slides open on arrival. */
-    private static float drawCondition(GuiGraphics g, HudFrame f, Conditions.Condition c, float x, float y, float appear) {
-        float full = chipWidth(c), w = CHIP + (full - CHIP) * Easing.outCubic(appear);
+    /**
+     * An abnormal state: a slanted bar in its colour, the icon, its name and how far it has gone, over a backing that
+     * fades out to the right. It wipes open on arrival and flashes.
+     */
+    private static void drawCondition(GuiGraphics g, HudFrame f, Conditions.Condition c, float y, float appear) {
+        float px = f.px;
+        float full = conditionWidth(c), w = full * Easing.outCubic(appear);
         boolean flash = appear < 1F && Easing.blink(f.now, 4F);
-        HudDraw.cutPanel(g, x, y, w, CHIP, 3, 0, 3, 0, f.c(NeonPalette.VOID, 0.72F));
-        HudDraw.cutFrame(g, x, y, w, CHIP, 3, 0, 3, 0, f.c(c.color(), flash ? 1F : 0.85F));
-        HudDraw.rect(g, x + CHIP, y + 2, x + w - 2, y + CHIP - 2, f.c(c.color(), 0.14F));
-        c.icon().draw(g, x + 2, y + 2, f.c(flash ? NeonPalette.WHITE : c.color()));
-        if (appear > 0.6F) {
-            HudText.draw(g, HudText.hud(c.label()), x + CHIP + 3, y + 3, f.c(NeonPalette.WHITE, (appear - 0.6F) / 0.4F));
+        HudDraw.fadeRight(g, 0, y, w, y + 10F, f.c(c.color(), 0.22F * appear));
+        HudDraw.parallelogram(g, 0, y, 2F, 10F, 1.5F, f.c(c.color(), appear));
+        c.icon().draw(g, 4.5F, y + 1F, 8F, f.c(flash ? NeonPalette.WHITE : c.color(), appear));
+        if (appear > 0.5F) {
+            float a = (appear - 0.5F) / 0.5F;
+            HudText.draw(g, HudText.title(c.label()), 15F, y + (10F - HudText.Kind.TITLE.cap()) / 2F, f.c(NeonPalette.WHITE, a), px);
             if (!Float.isNaN(c.level())) {
-                Component pct = HudText.micro(Math.round(c.level() * 100) + "%");
-                HudText.drawRight(g, pct, x + w - 4, y + 4, f.c(c.color()));
+                Component pct = HudText.data(Math.round(c.level() * 100) + "%");
+                HudText.drawRight(g, pct, full - 4F, y + (10F - HudText.Kind.DATA.cap()) / 2F, f.c(c.color(), a), px);
             }
         }
-        return full;
     }
 
-    private void drawEffect(GuiGraphics g, HudFrame f, MobEffectInstance e, float x, float y, float boot) {
+    /** An effect: its icon inside a thin ring that drains clockwise with the remaining time; its level in a corner. */
+    private void drawEffect(GuiGraphics g, HudFrame f, MobEffectInstance e, float cx, float cy, float boot) {
+        float px = f.px;
         Holder<MobEffect> effect = e.getEffect();
         int color = EffectIcons.color(effect);
         int max = maxDuration.merge(effect, e.getDuration(), Math::max);
@@ -125,16 +130,11 @@ public final class StatusGroup extends HudGroup {
         boolean ending = !e.isInfiniteDuration() && e.endsWithin(200);
         float alpha = boot * (ending && Easing.blink(f.now, 10F) ? 0.45F : 1F);
 
-        HudDraw.cutPanel(g, x, y, CHIP, CHIP, 3, 0, 3, 0, f.c(NeonPalette.VOID, 0.65F * boot));
-        HudDraw.cutFrame(g, x, y, CHIP, CHIP, 3, 0, 3, 0, f.c(color, 0.45F * boot));
-        EffectIcons.icon(effect).draw(g, x + 2, y + 2, f.c(color, alpha));
-        HudDraw.rect(g, x, y + CHIP + 1, x + CHIP, y + CHIP + 2, f.c(color, 0.18F * boot));
-        HudDraw.rect(g, x, y + CHIP + 1, x + CHIP * left, y + CHIP + 2, f.c(color, 0.9F * boot));
+        HudDraw.ring(g, cx, cy, RING - px, px, 32, f.c(color, 0.22F * boot));
+        HudDraw.arc(g, cx, cy, RING - px * 2, px * 2.5F, 0F, (float) (Math.PI * 2 * left), 32, f.c(color, 0.95F * boot));
+        EffectIcons.icon(effect).draw(g, cx - 4.5F, cy - 4.5F, 9F, f.c(color, alpha));
         if (e.getAmplifier() > 0) {
-            Component level = HudText.micro(roman(e.getAmplifier() + 1));
-            float lw = HudText.width(level);
-            HudDraw.rect(g, x + CHIP - lw - 1, y + CHIP - 6, x + CHIP + 1, y + CHIP, f.c(NeonPalette.VOID, 0.85F * boot));
-            HudText.draw(g, level, x + CHIP - lw, y + CHIP - 5, f.c(NeonPalette.WHITE, boot));
+            HudText.draw(g, HudText.label(roman(e.getAmplifier() + 1)), cx + RING - 2F, cy + RING - 4F, f.c(NeonPalette.WHITE, boot), px);
         }
     }
 

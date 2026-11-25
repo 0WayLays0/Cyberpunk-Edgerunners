@@ -55,12 +55,11 @@ class MapMathTest {
     }
 
     @Test
-    void frameMaskCutsTwoCorners() {
-        assertFalse(MinimapDisplay.inside(0, 0, 72), "top-left cut");
-        assertFalse(MinimapDisplay.inside(71, 71, 72), "bottom-right cut");
-        assertTrue(MinimapDisplay.inside(71, 0, 72), "top-right square");
-        assertTrue(MinimapDisplay.inside(0, 71, 72), "bottom-left square");
-        assertTrue(MinimapDisplay.inside(36, 36, 72));
+    void theMapIsADisc() {
+        assertTrue(MinimapDisplay.inside(0, 0, 36));
+        assertTrue(MinimapDisplay.inside(25, 25, 36), "inside the disc");
+        assertFalse(MinimapDisplay.inside(30, 30, 36), "a square's corner is outside the disc");
+        assertTrue(MinimapDisplay.inside(0, -36, 36), "the rim");
     }
 
     @Test

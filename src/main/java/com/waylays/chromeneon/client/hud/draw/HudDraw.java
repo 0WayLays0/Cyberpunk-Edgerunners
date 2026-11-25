@@ -170,8 +170,66 @@ public final class HudDraw {
         }
     }
 
-    /** A dashed horizontal line. */
-    public static void dashes(GuiGraphics g, float x0, float x1, float y, float dash, float gap, int c) {
-        for (float x = x0; x < x1; x += dash + gap) rect(g, x, y, Math.min(x1, x + dash), y + 1, c);
+    /** A dashed horizontal line, {@code t} thick. */
+    public static void dashes(GuiGraphics g, float x0, float x1, float y, float dash, float gap, float t, int c) {
+        for (float x = x0; x < x1; x += dash + gap) rect(g, x, y, Math.min(x1, x + dash), y + t, c);
+    }
+
+    /** A polyline {@code t} wide through points {x0, y0, x1, y1, ...}, with square joins. */
+    public static void stroke(GuiGraphics g, float[] p, float t, int c) {
+        for (int i = 0; i + 3 < p.length; i += 2) {
+            line(g, p[i], p[i + 1], p[i + 2], p[i + 3], t, c);
+            if (i > 0) rect(g, p[i] - t / 2F, p[i + 1] - t / 2F, p[i] + t / 2F, p[i + 1] + t / 2F, c);
+        }
+    }
+
+    /** A full ring. */
+    public static void ring(GuiGraphics g, float cx, float cy, float r, float t, int steps, int c) {
+        arc(g, cx, cy, r, t, 0F, (float) (Math.PI * 2), steps, c);
+    }
+
+    /** A ring cut into {@code dashes} arcs, turned by {@code phase} radians. */
+    public static void dashedRing(GuiGraphics g, float cx, float cy, float r, float t, int dashes, float fill, float phase, int c) {
+        float step = (float) (Math.PI * 2 / dashes);
+        for (int i = 0; i < dashes; i++) {
+            float a0 = phase + i * step;
+            arc(g, cx, cy, r, t, a0, a0 + step * fill, 3, c);
+        }
+    }
+
+    /** A small diamond: the nodes of rails and leader lines. */
+    public static void diamond(GuiGraphics g, float x, float y, float r, int c) {
+        quad(g, x, y - r, x - r, y, x, y + r, x + r, y, c);
+    }
+
+    /** A parallelogram with a vertical gradient (light top, darker bottom): segments with a sheen. */
+    public static void parallelogram(GuiGraphics g, float x, float y, float w, float h, float skew, int top, int bottom) {
+        quad(g, x + skew, y, x, y + h, x + w, y + h, x + w + skew, y, top, bottom, bottom, top);
+    }
+
+    /** Outline of a parallelogram, {@code t} thick. */
+    public static void parallelogramFrame(GuiGraphics g, float x, float y, float w, float h, float skew, float t, int c) {
+        outline(g, new float[] {x + skew, y, x + w + skew, y, x + w, y + h, x, y + h}, t, c);
+    }
+
+    /** A soft backing that fades out to the right: replaces closed panels. */
+    public static void fadeRight(GuiGraphics g, float x0, float y0, float x1, float y1, int c) {
+        hGradient(g, x0, y0, x1, y1, c, c & 0x00FFFFFF);
+    }
+
+    public static void fadeLeft(GuiGraphics g, float x0, float y0, float x1, float y1, int c) {
+        hGradient(g, x0, y0, x1, y1, c & 0x00FFFFFF, c);
+    }
+
+    /**
+     * A veil: a dark backing with feathered top and bottom edges, going from {@code left} to {@code right} across.
+     * It sits behind a block of data to keep it readable on any background, without the edges of a panel.
+     */
+    public static void veil(GuiGraphics g, float x0, float y0, float x1, float y1, float feather, int left, int right) {
+        int l0 = left & 0x00FFFFFF, r0 = right & 0x00FFFFFF;
+        float f = Math.min(feather, (y1 - y0) / 2F);
+        quad(g, x0, y0, x0, y0 + f, x1, y0 + f, x1, y0, l0, left, right, r0);
+        quad(g, x0, y0 + f, x0, y1 - f, x1, y1 - f, x1, y0 + f, left, left, right, right);
+        quad(g, x0, y1 - f, x0, y1, x1, y1, x1, y1 - f, left, l0, r0, right);
     }
 }

@@ -7,7 +7,6 @@ import com.waylays.chromeneon.client.hud.ChromeHud;
 import com.waylays.chromeneon.client.hud.HudFrame;
 import com.waylays.chromeneon.client.hud.anim.Easing;
 import com.waylays.chromeneon.client.hud.draw.HudDraw;
-import com.waylays.chromeneon.client.hud.draw.HudScissor;
 import com.waylays.chromeneon.client.hud.theme.HudText;
 import com.waylays.chromeneon.client.hud.theme.NeonPalette;
 import com.waylays.chromeneon.common.config.ClientConfig;
@@ -18,6 +17,7 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -28,13 +28,17 @@ import net.minecraft.world.phys.Vec3;
 import java.util.Optional;
 
 /**
- * The minimap itself: terrain composed into a texture every frame from {@link TerrainSampler} (one texel per GUI
- * pixel, so it shares the HUD's pixel grid), then vector overlays — creatures, markers, world spawn, last death,
- * scan pings, the north mark and the player's arrow with its field of view. The frame is cut at two corners.
+ * The minimap: a disc of terrain composed every frame from {@link TerrainSampler} and drawn with linear filtering
+ * (a smooth tactical map, not blocks), its edge fading out. Around it, a graduated compass ring turning with the
+ * view with its cardinal letters, fixed accent arcs and a slowly turning dashed ring. On the map: creatures, markers,
+ * world spawn, last death, scan pings, the field of view and the player's arrow.
  */
 public final class MinimapDisplay {
     private static final ResourceLocation TEXTURE = ChromeNeon.id("minimap");
-    static final float CUT_TL = 10F, CUT_BR = 6F;
+    /** Texels per GUI pixel of the map image: finer than the GUI grid, smoothed by linear filtering. */
+    private static final int DETAIL = 2;
+    /** Room around the disc for the compass ring and its letters. */
+    public static final float MARGIN = 13F;
     private DynamicTexture texture;
     private int textureSize;
 
@@ -42,84 +46,105 @@ public final class MinimapDisplay {
         return Math.max(1, (int) Math.floor(zoom));
     }
 
-    /** Blocks around the player the map can show (its corners, when it turns). */
+    /** Blocks around the player the map can show. */
     public static float radius() {
-        return ClientConfig.MINIMAP_SIZE.get() / 2F * ClientConfig.MINIMAP_ZOOM.get().floatValue() * 1.42F + 4F;
+        return ClientConfig.MINIMAP_SIZE.get() / 2F * ClientConfig.MINIMAP_ZOOM.get().floatValue() + 4F;
     }
 
-    public void draw(GuiGraphics g, HudFrame f, LocalPlayer player, float x, float y, int size, float boot) {
+    /** Draws the map with its centre at ({@code cx}, {@code cy}) and diameter {@code size}. */
+    public void draw(GuiGraphics g, HudFrame f, LocalPlayer player, float cx, float cy, int size, float boot) {
         float partial = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
         Vec3 p = player.getPosition(partial);
         MapView view = new MapView(p.x, p.z, player.getViewYRot(partial), ClientConfig.MINIMAP_ROTATE.get(),
                 ClientConfig.MINIMAP_ZOOM.get().floatValue(), size);
-        compose(f, view, size, boot);
+        float r = size / 2F, px = f.px;
+        float open = Easing.outCubic(boot);
+        compose(view, size, open);
 
-        float[] frame = HudDraw.cutBox(x - 1, y - 1, size + 2, size + 2, CUT_TL + 1, 0, CUT_BR + 1, 0);
-        HudDraw.polygon(g, frame, f.c(NeonPalette.VOID, 0.55F));
+        // Dark disc under the map, then the terrain
+        HudDraw.arc(g, cx, cy, 0F, r + 1F, 0F, (float) (Math.PI * 2), 48, f.c(NeonPalette.VOID, 0.5F * open));
         g.flush();
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         g.setColor(1F, 1F, 1F, f.opacity);
-        g.blit(TEXTURE, Math.round(x), Math.round(y), 0, 0, size, size, size, size);
+        g.pose().pushPose();
+        g.pose().translate(cx - r, cy - r, 0);
+        g.pose().scale(1F / DETAIL, 1F / DETAIL, 1F);
+        int texels = size * DETAIL;
+        g.blit(TEXTURE, 0, 0, 0, 0, texels, texels, texels, texels);
+        g.pose().popPose();
         g.setColor(1F, 1F, 1F, 1F);
 
-        if (boot >= 1F) {
-            HudScissor.push(g, x, y, x + size, y + size);
-            overlays(g, f, player, view, x, y, size, partial);
-            HudScissor.pop(g);
-            arrow(g, f, view, x + size / 2F, y + size / 2F);
-            north(g, f, view, x, y, size);
-        } else {
-            float line = y + size * boot;
-            HudDraw.rect(g, x, line, x + size, line + 1, f.c(NeonPalette.CYAN, 0.9F));
-        }
-        HudDraw.outline(g, frame, 1F, f.accent(0.9F));
-        if (!f.minimal) {
-            HudDraw.rect(g, x + CUT_TL + 2, y - 3, x + size * 0.48F, y - 1, f.accent());
-            for (float tx = x + 4; tx < x + size - CUT_BR - 4; tx += 6) {
-                HudDraw.rect(g, tx, y + size + 1, tx + 1, y + size + 3, f.accent(0.4F));
-            }
-        }
+        if (boot >= 1F) overlays(g, f, player, view, cx, cy, r, partial);
+        frame(g, f, view, cx, cy, r, open);
+        if (boot >= 1F) arrow(g, f, view, cx, cy);
     }
 
-    /** Writes this frame's terrain into the texture: rotated, masked to the frame, scanlines, darker edges. */
-    private void compose(HudFrame f, MapView view, int size, float boot) {
+    /** The rings around the map. */
+    private static void frame(GuiGraphics g, HudFrame f, MapView view, float cx, float cy, float r, float open) {
+        float px = f.px;
+        float turn = view.rotate() ? (float) Math.toRadians(-view.yawDegrees() + 180F) : 0F;
+        HudDraw.ring(g, cx, cy, r + 1F, px, 64, f.accent(0.55F * open));
+        // Compass graduation: every 10 degrees, longer every 30, letters at the cardinal points
+        for (int i = 0; i < 36; i++) {
+            float a = turn + (float) Math.toRadians(i * 10);
+            float len = i % 9 == 0 ? 3.5F : i % 3 == 0 ? 2F : 1F;
+            float s = (float) Math.sin(a), c = (float) -Math.cos(a);
+            HudDraw.line(g, cx + s * (r + 3F), cy + c * (r + 3F), cx + s * (r + 3F + len), cy + c * (r + 3F + len),
+                    i % 9 == 0 ? px * 2 : px, f.c(i % 9 == 0 ? NeonPalette.CYAN : NeonPalette.LAVENDER, (i % 9 == 0 ? 0.9F : 0.45F) * open));
+        }
+        String[] letters = {"N", "E", "S", "W"};
+        for (int i = 0; i < 4; i++) {
+            float a = turn + (float) (i * Math.PI / 2);
+            float lx = cx + (float) Math.sin(a) * (r + 10F), ly = cy - (float) Math.cos(a) * (r + 10F);
+            Component l = HudText.data(letters[i]);
+            HudText.draw(g, l, lx - HudText.width(l) / 2F, ly - HudText.Kind.DATA.cap() / 2F,
+                    f.c(i == 0 ? NeonPalette.CYAN : NeonPalette.LAVENDER, (i == 0 ? 1F : 0.6F) * open), px);
+        }
+        // Fixed accents and a slowly turning dashed ring
+        HudDraw.arc(g, cx, cy, r + 1F, px * 3F, (float) Math.toRadians(-140), (float) Math.toRadians(-100), 12, f.accent(open));
+        HudDraw.arc(g, cx, cy, r + 1F, px * 3F, (float) Math.toRadians(100), (float) Math.toRadians(112), 4, f.c(NeonPalette.CYAN, 0.8F * open));
+        HudDraw.dashedRing(g, cx, cy, r * 0.5F, px, 24, 0.45F, f.now * 0.004F, f.c(NeonPalette.WHITE, 0.08F * open));
+    }
+
+    /** Writes this frame's terrain: rotated, cut to a disc with a soft edge, darkening toward the rim. */
+    private void compose(MapView view, int mapSize, float open) {
+        int size = mapSize * DETAIL;
         if (texture == null || textureSize != size) {
             if (texture != null) texture.close();
             texture = new DynamicTexture(size, size, false);
             textureSize = size;
             Minecraft.getInstance().getTextureManager().register(TEXTURE, texture);
+            texture.setFilter(true, false);
         }
         NativeImage img = texture.getPixels();
         if (img == null) return;
         TerrainSampler terrain = ChromeHud.terrain();
-        float half = size / 2F;
-        int revealed = Math.round(size * boot);
+        float half = size / 2F, visible = half * open;
         double[] axes = view.axes();
-        double rx = axes[0], rz = axes[1], ux = axes[2], uz = axes[3];
+        double rx = axes[0] / DETAIL, rz = axes[1] / DETAIL, ux = axes[2] / DETAIL, uz = axes[3] / DETAIL;
         for (int py = 0; py < size; py++) {
             double dy = py + 0.5 - half;
             double rowX = view.centerX() - ux * dy, rowZ = view.centerZ() - uz * dy;
-            for (int px = 0; px < size; px++) {
-                if (py >= revealed || !inside(px, py, size)) {
-                    img.setPixelRGBA(px, py, 0);
+            for (int pxl = 0; pxl < size; pxl++) {
+                double dx = pxl + 0.5 - half;
+                float d = (float) Math.sqrt(dx * dx + dy * dy);
+                if (d > visible) {
+                    img.setPixelRGBA(pxl, py, 0);
                     continue;
                 }
-                double dx = px + 0.5 - half;
                 int c = terrain.colorAt(rowX + rx * dx, rowZ + rz * dx);
-                if (c == 0) c = ((px + py) % 5 == 0) ? MapPalette.NO_DATA_LINE : MapPalette.NO_DATA;
-                float k = (py & 1) == 1 ? 0.9F : 1F;
-                float edge = Math.min(Math.min(px, py), Math.min(size - 1 - px, size - 1 - py));
-                if (edge < 5) k *= 0.6F + 0.08F * edge;
-                c = MapPalette.scale(c, k);
-                img.setPixelRGBA(px, py, abgr(c, 0.9F));
+                if (c == 0) c = MapPalette.NO_DATA;
+                float rim = Math.clamp((visible - d) / (4F * DETAIL), 0F, 1F);
+                c = MapPalette.scale(c, 1F - 0.35F * (d / half) * (d / half));
+                img.setPixelRGBA(pxl, py, abgr(c, 0.9F * rim));
             }
         }
         texture.upload();
     }
 
-    static boolean inside(float px, float py, int size) {
-        return px + py >= CUT_TL && (size - 1 - px) + (size - 1 - py) >= CUT_BR;
+    static boolean inside(float dx, float dy, float r) {
+        return dx * dx + dy * dy <= r * r;
     }
 
     private static int abgr(int argb, float alpha) {
@@ -127,124 +152,110 @@ public final class MinimapDisplay {
         return (a << 24) | ((argb & 0xFF) << 16) | (argb & 0xFF00) | ((argb >> 16) & 0xFF);
     }
 
-    private void overlays(GuiGraphics g, HudFrame f, LocalPlayer player, MapView view, float x, float y, int size, float partial) {
-        float cx = x + size / 2F, cy = y + size / 2F;
+    private void overlays(GuiGraphics g, HudFrame f, LocalPlayer player, MapView view, float cx, float cy, float r, float partial) {
         ClientLevel level = Minecraft.getInstance().level;
-        // Field of view: a faint cone ahead of the player
-        float fov = (float) Math.toRadians(38), reach = size * 0.45F;
+        // Field of view: a cone fading out ahead of the player
+        float fov = (float) Math.toRadians(36), reach = r * 0.85F;
         float base = view.rotate() ? 0F : (float) Math.toRadians(player.getViewYRot(partial) + 180F);
         float lx = cx + (float) Math.sin(base - fov) * reach, ly = cy - (float) Math.cos(base - fov) * reach;
         float rx = cx + (float) Math.sin(base + fov) * reach, ry = cy - (float) Math.cos(base + fov) * reach;
-        HudDraw.quad(g, cx, cy, lx, ly, rx, ry, cx, cy, f.c(NeonPalette.CYAN, 0.22F),
-                f.c(NeonPalette.CYAN, 0F), f.c(NeonPalette.CYAN, 0F), f.c(NeonPalette.CYAN, 0.22F));
+        HudDraw.quad(g, cx, cy, lx, ly, rx, ry, cx, cy, f.c(NeonPalette.CYAN, 0.28F),
+                f.c(NeonPalette.CYAN, 0F), f.c(NeonPalette.CYAN, 0F), f.c(NeonPalette.CYAN, 0.28F));
 
         for (MapPings.Ping ping : ChromeHud.pings().active(f.now)) {
             float t = (f.now - ping.start()) / MapPings.LIFE;
             float[] m = view.toMap(ping.pos().x, ping.pos().z);
-            float r = Math.max(2F, ping.radius() / view.zoom()) * Easing.outCubic(t) + 2F;
-            HudDraw.arc(g, cx + m[0], cy + m[1], r, 1F, 0F, (float) (Math.PI * 2), 28, f.c(ping.color(), 1F - t));
+            if (!inside(m[0], m[1], r)) continue;
+            float pr = Math.min(r - 1F, (Math.max(2F, ping.radius() / view.zoom()) * Easing.outCubic(t) + 2F));
+            HudDraw.ring(g, cx + m[0], cy + m[1], pr, f.px * 1.5F, 32, f.c(ping.color(), 1F - t));
         }
 
         if (ClientConfig.MINIMAP_ENTITIES.get()) {
-            double range = size / 2F * view.zoom() * 1.42F;
+            double range = r * view.zoom();
             int drawn = 0;
             for (Entity e : level.entitiesForRendering()) {
                 if (!(e instanceof LivingEntity living) || e == player || !e.isAlive() || drawn > 96) continue;
                 Vec3 ep = e.getPosition(partial);
                 if (Math.abs(ep.x - view.centerX()) > range || Math.abs(ep.z - view.centerZ()) > range) continue;
                 float[] m = view.toMap(ep.x, ep.z);
-                float ex = cx + m[0], ey = cy + m[1];
-                if (!inside(ex - x, ey - y, size)) continue;
+                if (!inside(m[0], m[1], r - 2F)) continue;
                 drawn++;
-                entityDot(g, f, living, ex, ey, ep.y - player.getY());
+                entityDot(g, f, living, cx + m[0], cy + m[1], ep.y - player.getY());
             }
         }
 
         if (ClientConfig.MINIMAP_MARKERS.get()) {
             String dim = level.dimension().location().toString();
             BlockPos spawn = level.getSharedSpawnPos();
-            if (level.dimensionType().natural()) poi(g, f, view, x, y, size, spawn.getX() + 0.5, spawn.getZ() + 0.5, NeonPalette.VIOLET_HOT, "S");
+            if (level.dimensionType().natural()) poi(g, f, view, cx, cy, r, spawn.getX() + 0.5, spawn.getZ() + 0.5, NeonPalette.VIOLET_HOT, "S");
             Optional<GlobalPos> death = player.getLastDeathLocation();
             if (death.isPresent() && death.get().dimension().equals(level.dimension())) {
                 BlockPos d = death.get().pos();
-                poi(g, f, view, x, y, size, d.getX() + 0.5, d.getZ() + 0.5, NeonPalette.RED, "X");
+                poi(g, f, view, cx, cy, r, d.getX() + 0.5, d.getZ() + 0.5, NeonPalette.RED, "X");
             }
             for (MapMarkers.Marker marker : ChromeHud.markers().in(dim)) {
-                poi(g, f, view, x, y, size, marker.pos().getX() + 0.5, marker.pos().getZ() + 0.5, NeonPalette.CYAN,
+                poi(g, f, view, cx, cy, r, marker.pos().getX() + 0.5, marker.pos().getZ() + 0.5, NeonPalette.CYAN,
                         String.valueOf(marker.number()));
             }
         }
     }
 
-    /** Hostiles orange squares, players white diamonds, other creatures small cyan dots; a tick shows height. */
+    /** Hostiles are orange diamonds, players white rings, other creatures small cyan dots; a tick shows height. */
     private static void entityDot(GuiGraphics g, HudFrame f, LivingEntity e, float x, float y, double dy) {
+        float px = f.px;
         int color;
-        float r;
         if (e instanceof Player) {
             color = NeonPalette.WHITE;
-            r = 2F;
-            HudDraw.quad(g, x, y - r - 1, x - r - 1, y, x, y + r + 1, x + r + 1, y, f.c(NeonPalette.VOID, 0.8F));
-            HudDraw.quad(g, x, y - r, x - r, y, x, y + r, x + r, y, f.c(color));
+            HudDraw.ring(g, x, y, 1.6F, px * 2, 12, f.c(color));
+        } else if (e instanceof Enemy) {
+            color = NeonPalette.ORANGE;
+            HudDraw.diamond(g, x, y, 1.9F, f.c(NeonPalette.VOID, 0.7F));
+            HudDraw.diamond(g, x, y, 1.4F, f.c(color));
         } else {
-            boolean hostile = e instanceof Enemy;
-            color = hostile ? NeonPalette.ORANGE : NeonPalette.CYAN_SOFT;
-            r = hostile ? 1.5F : 1F;
-            HudDraw.rect(g, x - r - 0.5F, y - r - 0.5F, x + r + 0.5F, y + r + 0.5F, f.c(NeonPalette.VOID, 0.8F));
-            HudDraw.rect(g, x - r, y - r, x + r, y + r, f.c(color, hostile ? 1F : 0.8F));
+            color = NeonPalette.CYAN_SOFT;
+            HudDraw.arc(g, x, y, 0F, 0.9F, 0F, (float) (Math.PI * 2), 8, f.c(color, 0.85F));
         }
-        if (dy > 3) HudDraw.rect(g, x - 1, y - r - 2.5F, x + 1, y - r - 1.5F, f.c(color, 0.8F));
-        else if (dy < -3) HudDraw.rect(g, x - 1, y + r + 1.5F, x + 1, y + r + 2.5F, f.c(color, 0.8F));
+        if (dy > 3) HudDraw.rect(g, x - 1, y - 3.2F, x + 1, y - 3.2F + px * 2, f.c(color, 0.8F));
+        else if (dy < -3) HudDraw.rect(g, x - 1, y + 3.2F - px * 2, x + 1, y + 3.2F, f.c(color, 0.8F));
     }
 
-    /** A point of interest: a diamond with its letter; outside the map it sticks to the edge, pointing out. */
-    private static void poi(GuiGraphics g, HudFrame f, MapView view, float x, float y, int size, double wx, double wz,
+    /** A point of interest: a pin with its letter; beyond the map it sits on the rim, pointing outward. */
+    private static void poi(GuiGraphics g, HudFrame f, MapView view, float cx, float cy, float r, double wx, double wz,
                             int color, String label) {
-        float half = size / 2F, inset = half - 5F;
         float[] m = view.toMap(wx, wz);
         float dx = m[0], dy = m[1];
-        boolean outside = Math.abs(dx) > inset || Math.abs(dy) > inset;
+        float d = (float) Math.sqrt(dx * dx + dy * dy);
+        boolean outside = d > r - 4F;
         if (outside) {
-            float k = inset / Math.max(Math.abs(dx), Math.abs(dy));
-            dx *= k;
-            dy *= k;
+            dx = dx / d * (r - 4F);
+            dy = dy / d * (r - 4F);
         }
-        float px = x + half + dx, py = y + half + dy;
-        HudDraw.quad(g, px, py - 4, px - 4, py, px, py + 4, px + 4, py, f.c(NeonPalette.VOID, 0.85F));
-        HudDraw.quad(g, px, py - 3, px - 3, py, px, py + 3, px + 3, py, f.c(color));
-        var text = HudText.micro(label);
-        HudText.draw(g, text, px - HudText.width(text) / 2F + 0.5F, py - 2, f.c(NeonPalette.VOID));
-        if (outside) {
-            float len = (float) Math.sqrt(dx * dx + dy * dy), ux = dx / len, uy = dy / len;
-            HudDraw.triangle(g, px + ux * 7, py + uy * 7, px + ux * 4 - uy * 2.5F, py + uy * 4 + ux * 2.5F,
-                    px + ux * 4 + uy * 2.5F, py + uy * 4 - ux * 2.5F, f.c(color));
+        float x = cx + dx, y = cy + dy;
+        HudDraw.diamond(g, x, y, 3.4F, f.c(NeonPalette.VOID, 0.8F));
+        HudDraw.diamond(g, x, y, 2.8F, f.c(color));
+        Component text = HudText.label(label);
+        HudText.drawFlat(g, text, x - HudText.width(text) / 2F, y - HudText.Kind.LABEL.cap() / 2F, f.c(NeonPalette.VOID));
+        if (outside && d > 0) {
+            float ux = dx / (r - 4F), uy = dy / (r - 4F);
+            HudDraw.triangle(g, x + ux * 6.5F, y + uy * 6.5F, x + ux * 4F - uy * 2F, y + uy * 4F + ux * 2F,
+                    x + ux * 4F + uy * 2F, y + uy * 4F - ux * 2F, f.c(color));
         }
     }
 
-    /** The player: a white arrowhead over a dark one, pointing where they look. */
+    /** The player: a white arrowhead with a dark edge, pointing where they look. */
     private static void arrow(GuiGraphics g, HudFrame f, MapView view, float cx, float cy) {
         float a = view.rotate() ? 0F : (float) Math.toRadians(view.yawDegrees() + 180F);
-        drawArrow(g, cx, cy, a, 5.5F, f.c(NeonPalette.VOID, 0.9F));
-        drawArrow(g, cx, cy, a, 4F, f.c(NeonPalette.WHITE));
+        drawArrow(g, cx, cy, a, 4.6F, f.c(NeonPalette.VOID, 0.85F));
+        drawArrow(g, cx, cy, a, 3.6F, f.c(NeonPalette.WHITE));
     }
 
     private static void drawArrow(GuiGraphics g, float cx, float cy, float a, float s, int c) {
         float sin = (float) Math.sin(a), cos = (float) Math.cos(a);
         float tipX = cx + sin * s, tipY = cy - cos * s;
-        float lX = cx + (-0.8F * s) * cos - (-0.75F * s) * sin, lY = cy + (-0.8F * s) * sin + (-0.75F * s) * cos;
-        float rX = cx + (0.8F * s) * cos - (-0.75F * s) * sin, rY = cy + (0.8F * s) * sin + (-0.75F * s) * cos;
-        float nX = cx - sin * (-0.25F * s), nY = cy + cos * (-0.25F * s);
+        float lX = cx + (-0.75F * s) * cos - (-0.8F * s) * sin, lY = cy + (-0.75F * s) * sin + (-0.8F * s) * cos;
+        float rX = cx + (0.75F * s) * cos - (-0.8F * s) * sin, rY = cy + (0.75F * s) * sin + (-0.8F * s) * cos;
+        float nX = cx - sin * (-0.3F * s), nY = cy + cos * (-0.3F * s);
         HudDraw.triangle(g, tipX, tipY, lX, lY, nX, nY, c);
         HudDraw.triangle(g, tipX, tipY, nX, nY, rX, rY, c);
-    }
-
-    /** "N" where north meets the frame. */
-    private static void north(GuiGraphics g, HudFrame f, MapView view, float x, float y, int size) {
-        float[] m = view.toMap(view.centerX(), view.centerZ() - 1000);
-        float half = size / 2F, inset = half - 4F;
-        float k = inset / Math.max(Math.abs(m[0]), Math.abs(m[1]));
-        float px = x + half + m[0] * k, py = y + half + m[1] * k;
-        var n = HudText.micro("N");
-        HudDraw.rect(g, px - 3, py - 3.5F, px + 3, py + 3.5F, f.c(NeonPalette.VOID, 0.9F));
-        HudText.draw(g, n, px - 1.5F, py - 2.5F, f.c(NeonPalette.CYAN));
     }
 }

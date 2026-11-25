@@ -9,94 +9,114 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 
 /**
- * Health: a tab with the value, then a run of chevrons pointing forward. Damage leaves a white chunk that cools to
- * orange and drains away; healing sweeps cyan; below 30% the bar turns red and beats. Absorption appends hollow
- * chevrons. Health above 40 points is spread over 20 chevrons.
+ * Health: the value in large digits, then a run of fine slanted segments (one per health point) with a sheen,
+ * capped by a bright chevron where the fill ends, a hairline rule under them that breaks upward at its end, and the
+ * exact reading under the rule. Damage leaves a white chunk that cools to orange and drains; healing sweeps cyan;
+ * critical health turns the bar red with a heartbeat glow and a slanted CRITICAL tag.
  */
 final class HealthBar {
-    static final float SEG_W = 4F, SEG_H = 9F, DEPTH = 3F, STRIDE = 6F, TAB_H = 11F;
+    static final float SEG_W = 2.6F, SEG_H = 7F, SKEW = 2.4F, STRIDE = 3.6F, TOP = 2F;
 
     private HealthBar() {}
 
     static int segments(float max) {
-        return Math.clamp((int) Math.ceil(max / 2F), 5, 20);
+        return Math.clamp((int) Math.ceil(max), 10, 40);
     }
 
-    static float tabWidth(VitalsTracker t) {
-        return Math.max(22F, HudText.width(HudText.hud(value(t))) + 12F);
+    static float barX(VitalsTracker t) {
+        return HudText.width(HudText.value(value(t, 20))) + 6F;
     }
 
-    static float width(VitalsTracker t, HudFrame f) {
+    static float barEnd(VitalsTracker t) {
+        return barX(t) + segments(t.maxHealth) * STRIDE + SKEW;
+    }
+
+    static float width(VitalsTracker t) {
         float per = t.maxHealth / segments(t.maxHealth);
-        int absorb = (int) Math.ceil(t.absorption / per);
-        return tabWidth(t) + 4F + segments(t.maxHealth) * STRIDE + DEPTH + absorb * STRIDE + (t.critical ? 52F : 8F);
+        return barEnd(t) + (int) Math.ceil(t.absorption / per) * STRIDE + (t.critical ? 46F : 12F);
     }
 
-    private static String value(VitalsTracker t) {
-        return String.valueOf((int) Math.ceil(t.health));
+    private static String value(VitalsTracker t, float fallback) {
+        return String.valueOf((int) Math.ceil(t == null ? fallback : t.health));
     }
 
     static void draw(GuiGraphics g, HudFrame f, VitalsTracker t, float x, float y, float boot) {
         int n = segments(t.maxHealth);
         float per = t.maxHealth / n;
         float shown = t.shown.update(t.health, f.delta, 0.45F);
-        float tabW = tabWidth(t);
-        float bx = x + tabW + 4F;
-        float barEnd = bx + n * STRIDE + DEPTH;
-        float pulse = Easing.heartbeat(f.now, 18F);
+        float px = f.px;
+        float bx = x + barX(t), by = y + TOP;
+        float end = bx + n * STRIDE + SKEW;
+        float beat = Easing.heartbeat(f.now, 18F);
         int lit = boot >= 1F ? n : (int) Math.floor(n * boot);
 
-        if (!f.minimal) HudDraw.rect(g, bx - 2, y - 1, barEnd + 2, y + TAB_H + 1, f.accent(0.07F));
+        // The number
+        int numberColor = t.critical ? f.c(NeonPalette.lerp(NeonPalette.ORANGE, NeonPalette.RED, beat)) : f.c(NeonPalette.WHITE);
+        Component number = HudText.value(value(t, 0));
+        HudText.drawGlow(g, number, x, y, NeonPalette.fade(numberColor, Easing.outCubic(boot)), px);
+
+        // Glow under the filled part
+        float fillEnd = bx + Math.min(n, shown / per) * STRIDE;
+        int glow = t.critical ? NeonPalette.RED : NeonPalette.lerp(NeonPalette.VIOLET, NeonPalette.ORANGE, f.alert * 0.6F);
+        HudDraw.fadeRight(g, bx - 1, by - 1.5F, Math.max(bx, fillEnd) + 6, by + SEG_H + 1.5F,
+                f.c(glow, (t.critical ? 0.18F + 0.2F * beat : 0.12F) * boot));
+
         for (int i = 0; i < n; i++) {
-            float sx = bx + i * STRIDE, sy = y + 1;
-            int empty = t.critical ? f.c(NeonPalette.RED_DEEP, 0.9F) : f.c(NeonPalette.VIOLET_DEEP, 0.8F);
-            HudDraw.chevron(g, sx, sy, SEG_W, SEG_H, DEPTH, empty);
+            float sx = bx + i * STRIDE;
             if (i >= lit) continue;
             float fill = Math.clamp((shown - i * per) / per, 0F, 1F);
             float trail = Math.clamp((t.trail - i * per) / per, 0F, 1F);
+            if (fill < 0.99F) {
+                HudDraw.parallelogramFrame(g, sx, by, SEG_W, SEG_H, SKEW, px,
+                        f.c(t.critical ? NeonPalette.RED : NeonPalette.VIOLET, 0.35F));
+            }
             if (trail > fill + 0.01F) {
                 float age = (f.now - t.damageAt) / 10F;
-                HudDraw.chevron(g, sx, sy, SEG_W * trail, SEG_H, DEPTH,
+                HudDraw.parallelogram(g, sx, by, SEG_W * trail, SEG_H, SKEW * trail,
                         f.c(NeonPalette.lerp(NeonPalette.WHITE, NeonPalette.ORANGE, Easing.clamp(age))));
             }
             if (fill > 0.01F) {
-                HudDraw.chevron(g, sx, sy, Math.max(1F, SEG_W * fill), SEG_H, DEPTH, f.c(segmentColor(f, t, i, per, pulse)));
+                int base = segmentColor(f, t, i, per, beat);
+                HudDraw.parallelogram(g, sx, by, SEG_W * fill, SEG_H, SKEW * fill,
+                        f.c(NeonPalette.lerp(base, NeonPalette.WHITE, 0.35F)), f.c(base));
             }
         }
-        // Absorption: hollow white chevrons after the bar
+        // The chevron cap where the fill ends
+        if (shown > 0F && boot >= 1F) {
+            float cx = Math.min(fillEnd, end - SKEW) + 1.2F;
+            int cap = t.critical ? NeonPalette.RED : NeonPalette.WHITE;
+            HudDraw.stroke(g, new float[] {cx, by - 1, cx + 3, by + SEG_H / 2F, cx, by + SEG_H + 1}, px * 2, f.c(cap, 0.9F));
+        }
+        // Absorption: open white segments after the bar
         int absorb = (int) Math.ceil(t.absorption / per);
         for (int i = 0; i < absorb && boot >= 1F; i++) {
-            float sx = barEnd + 2 + i * STRIDE;
-            HudDraw.chevron(g, sx, y + 1, SEG_W, SEG_H, DEPTH, f.c(NeonPalette.WHITE, 0.85F));
-            HudDraw.chevron(g, sx + 1.2F, y + 3, SEG_W - 2F, SEG_H - 4F, DEPTH - 1F, f.c(NeonPalette.VOID, 0.9F));
+            HudDraw.parallelogramFrame(g, end + 3 + i * STRIDE, by, SEG_W, SEG_H, SKEW, px * 1.5F, f.c(NeonPalette.WHITE, 0.9F));
         }
 
-        // The value tab, sliding in during the boot
-        float tabX = x - (1F - Easing.outCubic(boot)) * 12F;
-        int tabColor = t.critical
-                ? f.c(NeonPalette.lerp(NeonPalette.ORANGE, NeonPalette.RED, pulse))
-                : f.accent();
-        HudDraw.cutPanel(g, tabX, y, tabW, TAB_H, 0, 0, 4, 3, tabColor);
-        Component value = HudText.hud(value(t));
-        HudText.draw(g, value, tabX + (tabW - 4F - HudText.width(value)) / 2F + 1F, y + 2, f.c(NeonPalette.VOID));
-
-        if (!f.minimal) {
-            float uy = y + TAB_H + 1;
-            HudDraw.hLine(g, bx, barEnd, uy, f.accent(0.45F));
-            HudDraw.line(g, barEnd, uy + 0.5F, barEnd + 3, uy + 3.5F, 1F, f.accent(0.45F));
-            HudDraw.hLine(g, barEnd + 3, barEnd + 9, uy + 3, f.accent(0.45F));
+        // The rule: from under the number, along the bar, breaking upward at its end
+        float ry = by + SEG_H + 3F;
+        float reach = x + (end + 8 - x) * Easing.outCubic(boot);
+        HudDraw.rect(g, x, ry, reach, ry + px, f.accent(0.75F));
+        if (boot >= 1F) {
+            HudDraw.line(g, end + 8, ry + px / 2, end + 12, ry - 4, px, f.accent(0.75F));
+            HudDraw.rect(g, x, ry - px, x + 6, ry + px * 2, f.accent());
         }
         if (t.critical) {
-            Component tag = HudText.micro(Component.translatable("chromeneon.hud.critical"));
-            float cx = barEnd + 4 + absorb * STRIDE, w = HudText.width(tag) + 8F;
-            float alpha = Easing.blink(f.now, 12F) ? 1F : 0.55F;
-            HudDraw.parallelogram(g, cx, y + 2, w, 7, 2, f.c(NeonPalette.RED, alpha));
-            HudText.draw(g, tag, cx + 4F, y + 3, f.c(NeonPalette.VOID, alpha));
+            Component tag = HudText.label(Component.translatable("chromeneon.hud.critical"));
+            float tx = end + 4 + absorb * STRIDE + 4, w = HudText.width(tag) + 7F;
+            float a = Easing.blink(f.now, 12F) ? 1F : 0.55F;
+            HudDraw.parallelogram(g, tx, by, w, SEG_H, 2F, f.c(NeonPalette.RED, a));
+            HudText.drawFlat(g, tag, tx + 3.5F, by + (SEG_H - HudText.Kind.LABEL.cap()) / 2F, f.c(NeonPalette.VOID, a));
         }
     }
 
-    private static int segmentColor(HudFrame f, VitalsTracker t, int i, float per, float pulse) {
-        int base = t.critical ? NeonPalette.lerp(NeonPalette.ORANGE, NeonPalette.RED, 0.4F + 0.6F * pulse)
+    /** Where the label row under the rule starts. */
+    static float labelY(float y) {
+        return y + TOP + SEG_H + 5.5F;
+    }
+
+    private static int segmentColor(HudFrame f, VitalsTracker t, int i, float per, float beat) {
+        int base = t.critical ? NeonPalette.lerp(NeonPalette.ORANGE, NeonPalette.RED, 0.4F + 0.6F * beat)
                 : NeonPalette.lerp(NeonPalette.VIOLET, NeonPalette.ORANGE, f.alert * 0.6F);
         float healAge = (f.now - t.healAt) / 14F;
         float segStart = i * per, segEnd = segStart + per;
@@ -106,7 +126,7 @@ final class HealthBar {
         return base;
     }
 
-    /** The state word of the label row above the bar. */
+    /** The state word of the label row. */
     static Component state(HudFrame f, VitalsTracker t) {
         if (t.health <= 0F) return Component.translatable("chromeneon.hud.vitals.flatline");
         if (t.critical) return Component.translatable("chromeneon.hud.vitals.critical");

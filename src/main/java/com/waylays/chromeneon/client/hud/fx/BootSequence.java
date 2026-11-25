@@ -33,8 +33,8 @@ public final class BootSequence {
         float fade = 1F - Easing.smoothstep((t - 0.75F) / 0.25F);
         HudDraw.vGradient(g, 0, y - 28, f.width, y, NeonPalette.alpha(NeonPalette.VIOLET, 0F),
                 NeonPalette.alpha(NeonPalette.VIOLET, 0.10F * fade));
-        HudDraw.rect(g, 0, y, f.width, y + 1, NeonPalette.alpha(NeonPalette.CYAN, 0.55F * fade));
-        var label = HudText.micro("CHROME NEON // SYS.INIT " + Math.round(t * 100) + "%");
-        HudText.draw(g, label, (f.width - HudText.width(label)) / 2F, f.height / 2F + 14, NeonPalette.alpha(NeonPalette.CYAN, fade));
+        HudDraw.rect(g, 0, y, f.width, y + f.screenPx, NeonPalette.alpha(NeonPalette.CYAN, 0.7F * fade));
+        var label = HudText.label("CHROME NÉON // SYS.INIT " + Math.round(t * 100) + "%");
+        HudText.draw(g, label, (f.width - HudText.width(label)) / 2F, f.height / 2F + 14, NeonPalette.alpha(NeonPalette.CYAN, fade), f.screenPx);
     }
 }

@@ -23,6 +23,10 @@ public final class HudFrame {
     /** 0 when healthy, toward 1 as health becomes critical: the interface intensifies with it. */
     public final float alert;
     public final long millis;
+    /** One screen pixel in a HUD group's local units (GUI scale and HUD scale undone): the width of a hairline. */
+    public final float px;
+    /** One screen pixel in GUI units (for the layers not scaled by the HUD scale). */
+    public final float screenPx;
 
     private HudFrame(float now, float delta, int width, int height, float alert) {
         this.now = now;
@@ -36,6 +40,10 @@ public final class HudFrame {
         this.glitch = ClientConfig.GLITCH_EFFECTS.get();
         this.alert = alert;
         this.millis = Util.getMillis();
+        double gui = Minecraft.getInstance().getWindow().getGuiScale();
+        this.px = (float) (1.0 / (gui * scale));
+        this.screenPx = (float) (1.0 / gui);
+        com.waylays.chromeneon.client.hud.theme.HudText.setScale(gui * scale);
     }
 
     /** Called at the start of every rendered frame. */
