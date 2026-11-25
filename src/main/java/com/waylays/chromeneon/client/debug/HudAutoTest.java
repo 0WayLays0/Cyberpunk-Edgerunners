@@ -64,11 +64,11 @@ public final class HudAutoTest {
 
     private HudAutoTest() {}
 
-    private static void log(String msg, Object... args) {
+    static void log(String msg, Object... args) {
         ChromeNeon.LOGGER.info("[HudAutoTest] " + msg, args);
     }
 
-    private static void fail(String msg) {
+    static void fail(String msg) {
         FAILURES.add(msg);
         ChromeNeon.LOGGER.error("[HudAutoTest] FAIL {}", msg);
     }
@@ -131,12 +131,12 @@ public final class HudAutoTest {
         }
     }
 
-    private static void step(int wait, Consumer<Minecraft> action) {
+    static void step(int wait, Consumer<Minecraft> action) {
         STEPS.add(new Step(wait, action));
     }
 
     /** Runs a command as the player on the integrated server. */
-    private static void command(Minecraft mc, String cmd) {
+    static void command(Minecraft mc, String cmd) {
         IntegratedServer server = mc.getSingleplayerServer();
         var id = mc.player.getUUID();
         server.execute(() -> {
@@ -145,7 +145,7 @@ public final class HudAutoTest {
         });
     }
 
-    private static void onServerPlayer(Minecraft mc, Consumer<ServerPlayer> action) {
+    static void onServerPlayer(Minecraft mc, Consumer<ServerPlayer> action) {
         IntegratedServer server = mc.getSingleplayerServer();
         var id = mc.player.getUUID();
         server.execute(() -> {
@@ -154,7 +154,7 @@ public final class HudAutoTest {
         });
     }
 
-    private static void look(Minecraft mc, float yaw, float pitch) {
+    static void look(Minecraft mc, float yaw, float pitch) {
         mc.player.setYRot(yaw);
         mc.player.setXRot(pitch);
         mc.player.yRotO = yaw;
@@ -185,6 +185,8 @@ public final class HudAutoTest {
                 p.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 1200, 1, false, false, true));
             });
             command(mc, "chromeneon ram set @s 2");
+            // Scanning and targeting need working optics (phase 3)
+            command(mc, "chromeneon implant install @s chromeneon:argus_optics chromeneon:optics");
         });
         step(10, mc -> {
             command(mc, "summon minecraft:husk ~ ~ ~6 {NoAI:1b,PersistenceRequired:1b,Rotation:[180f,0f]}");
@@ -199,6 +201,8 @@ public final class HudAutoTest {
         });
         step(60, mc -> {
             look(mc, 0, 8);
+            // The optics' install message is not part of the overview
+            ChromeHud.notifications().clear();
             // Plants cleared from the arena drop seeds the player picks up: not part of the picture
             command(mc, "kill @e[type=minecraft:item]");
             command(mc, "clear @s minecraft:wheat_seeds");
@@ -238,7 +242,7 @@ public final class HudAutoTest {
         });
 
         step(20, mc -> {
-            command(mc, "chromeneon notify @s cyberware Optiques Kiroshi detectees");
+            command(mc, "chromeneon notify @s cyberware Optiques Argus detectees");
             ChromeHud.notify(NotificationKind.WARNING, Component.translatable("chromeneon.hud.test.warning.title"),
                     Component.translatable("chromeneon.hud.test.warning.message"));
             float start = HudTime.ticks();
@@ -329,12 +333,13 @@ public final class HudAutoTest {
         step(4, HudAutoTest::applyScale);
         step(20, mc -> shot(mc, "12_hud_off_vanilla_back"));
         step(2, mc -> ClientConfig.HUD_ENABLED.set(true));
+        CyberwareAutoTest.plan();
     }
 
     private static int pendingScale, pendingW, pendingH, retries;
 
     /** Asks for a window size; the GUI scale is applied by {@link #applyScale} once the window really has it. */
-    private static void resize(Minecraft mc, int w, int h, int gui) {
+    static void resize(Minecraft mc, int w, int h, int gui) {
         GLFW.glfwSetWindowSize(mc.getWindow().getWindow(), w, h);
         pendingScale = gui;
         pendingW = w;
@@ -343,7 +348,7 @@ public final class HudAutoTest {
     }
 
     /** The game caps the GUI scale to what the current window allows, so it is set after the resize. */
-    private static void applyScale(Minecraft mc) {
+    static void applyScale(Minecraft mc) {
         if ((mc.getWindow().getWidth() != pendingW || mc.getWindow().getHeight() != pendingH) && retries++ < 20) {
             // The window has not taken its new size yet: try again a little later
             STEPS.add(index, new Step(5, HudAutoTest::applyScale));
@@ -361,7 +366,7 @@ public final class HudAutoTest {
      */
     private static long lastFrames = -1;
 
-    private static void checkLayout(Minecraft mc, String label) {
+    static void checkLayout(Minecraft mc, String label) {
         if (HudBounds.frames() == lastFrames) fail(label + ": no frame was rendered since the last check");
         lastFrames = HudBounds.frames();
         if (HudBounds.snapshot().isEmpty()) fail(label + ": no HUD group drawn");
@@ -398,7 +403,7 @@ public final class HudAutoTest {
         mc.getToasts().clear();
     }
 
-    private static void shot(Minecraft mc, String name) {
+    static void shot(Minecraft mc, String name) {
         try {
             Path dir = FMLPaths.GAMEDIR.get().resolve("chromeneon-autotest");
             Files.createDirectories(dir);

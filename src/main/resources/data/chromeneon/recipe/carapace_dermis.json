@@ -1,0 +1,24 @@
+{
+ "type": "minecraft:crafting_shaped",
+ "category": "misc",
+ "pattern": [
+  "SIS",
+  "ICI",
+  "SIS"
+ ],
+ "key": {
+  "S": {
+   "item": "minecraft:turtle_scute"
+  },
+  "I": {
+   "item": "minecraft:iron_ingot"
+  },
+  "C": {
+   "item": "chromeneon:neural_chip"
+  }
+ },
+ "result": {
+  "id": "chromeneon:carapace_dermis",
+  "count": 1
+ }
+}

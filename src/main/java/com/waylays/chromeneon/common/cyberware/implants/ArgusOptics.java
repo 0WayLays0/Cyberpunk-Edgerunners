@@ -4,6 +4,7 @@ import com.waylays.chromeneon.common.config.ServerConfig;
 import com.waylays.chromeneon.common.cyberware.Implant;
 import com.waylays.chromeneon.common.cyberware.ImplantContext;
 import com.waylays.chromeneon.common.cyberware.UseResult;
+import com.waylays.chromeneon.common.cyberware.mechanics.Cooldowns;
 import com.waylays.chromeneon.common.registry.ModBodySlots;
 import com.waylays.chromeneon.common.registry.ModSounds;
 import net.minecraft.network.chat.Component;
@@ -48,7 +49,7 @@ public final class ArgusOptics extends Implant {
         if (ctx.state().coolingDown(ctx.now())) return UseResult.COOLDOWN;
         if (!ctx.data().ram().tryConsume(ServerConfig.TACTICAL_RAM.get())) return UseResult.NO_RAM;
         ctx.state().activeUntil = ctx.now() + ServerConfig.TACTICAL_DURATION.get();
-        ctx.state().cooldownUntil = ctx.state().activeUntil + ServerConfig.TACTICAL_COOLDOWN.get();
+        ctx.state().cooldownUntil = ctx.state().activeUntil + Cooldowns.of(ctx, this, ServerConfig.TACTICAL_COOLDOWN.get());
         ctx.player().level().playSound(null, ctx.player().blockPosition(), ModSounds.OPTICS_SCAN.get(), SoundSource.PLAYERS, 0.8F, 1F);
         return UseResult.OK;
     }

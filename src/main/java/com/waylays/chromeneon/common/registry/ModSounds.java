@@ -14,6 +14,7 @@ public final class ModSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> IMPLANT_REMOVE = sound("implant.remove");
     public static final DeferredHolder<SoundEvent, SoundEvent> ACCELERATOR_ON = sound("accelerator.on");
     public static final DeferredHolder<SoundEvent, SoundEvent> ACCELERATOR_OFF = sound("accelerator.off");
+    public static final DeferredHolder<SoundEvent, SoundEvent> ACCELERATOR_CRIT = sound("accelerator.crit");
     public static final DeferredHolder<SoundEvent, SoundEvent> BLADES_DEPLOY = sound("blades.deploy");
     public static final DeferredHolder<SoundEvent, SoundEvent> BLADES_RETRACT = sound("blades.retract");
     public static final DeferredHolder<SoundEvent, SoundEvent> BLADES_HIT = sound("blades.hit");

@@ -103,8 +103,13 @@ public final class HudEvents {
     /** Our vitals and status replace the vanilla hearts, armor and effect list while they are shown. */
     @SubscribeEvent
     public static void onGuiLayer(RenderGuiLayerEvent.Pre event) {
-        if (!HudVisibility.panels()) return;
         var name = event.getName();
+        // The game's "press shift to dismount" line would sit in the middle of the surgery screen
+        if (name.equals(VanillaGuiLayers.OVERLAY_MESSAGE) && Minecraft.getInstance().screen instanceof HudVisibility.FullScreenInterface) {
+            event.setCanceled(true);
+            return;
+        }
+        if (!HudVisibility.panels()) return;
         if ((name.equals(VanillaGuiLayers.PLAYER_HEALTH) || name.equals(VanillaGuiLayers.ARMOR_LEVEL))
                 && ClientConfig.VITALS.enabled().get()) {
             event.setCanceled(true);
@@ -124,6 +129,7 @@ public final class HudEvents {
         SyncedCyberState.clear();
         ClientCyberware.clear();
         com.waylays.chromeneon.client.cyberware.BladeAnimation.clear();
+        com.waylays.chromeneon.client.cyberware.Afterimages.clear();
         ChromeHud.reset();
     }
 }

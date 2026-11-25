@@ -60,4 +60,31 @@ public abstract class CyberwareEvent extends PlayerEvent {
             return ticks;
         }
     }
+
+    /**
+     * An implant is about to cool down: listeners (perks, other mods) can change how long. The implants that shorten
+     * cooldowns already applied their share ({@link #base()} is the value before them).
+     */
+    public static final class Cooldown extends CyberwareEvent {
+        private final int base;
+        private int ticks;
+
+        public Cooldown(ServerPlayer player, ResourceLocation implant, ResourceLocation slot, int base, int ticks) {
+            super(player, implant, slot);
+            this.base = base;
+            this.ticks = ticks;
+        }
+
+        public int base() {
+            return base;
+        }
+
+        public int ticks() {
+            return ticks;
+        }
+
+        public void setTicks(int ticks) {
+            this.ticks = Math.max(0, ticks);
+        }
+    }
 }

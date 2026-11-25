@@ -28,7 +28,9 @@ public final class ModItems {
 
     public static final DeferredItem<BlockItem> RIPPERDOC_CHAIR = ITEMS.registerSimpleBlockItem(ModBlocks.RIPPERDOC_CHAIR);
 
-    public static final DeferredItem<ImplantItem> CHRONOS_ACCELERATOR = implant("chronos_accelerator", ModImplants.CHRONOS_ACCELERATOR, Rarity.EPIC);
+    public static final DeferredItem<ImplantItem> CHRONOS_MK1 = implant("chronos_mk1", ModImplants.CHRONOS_MK1, Rarity.RARE);
+    public static final DeferredItem<ImplantItem> CHRONOS_MK2 = implant("chronos_mk2", ModImplants.CHRONOS_MK2, Rarity.EPIC);
+    public static final DeferredItem<ImplantItem> CHRONOS_MK3 = implant("chronos_mk3", ModImplants.CHRONOS_MK3, Rarity.EPIC);
     public static final DeferredItem<ImplantItem> REAPER_BLADES = implant("reaper_blades", ModImplants.REAPER_BLADES, Rarity.RARE);
     public static final DeferredItem<ImplantItem> SPRING_TENDONS = implant("spring_tendons", ModImplants.SPRING_TENDONS, Rarity.UNCOMMON);
     public static final DeferredItem<ImplantItem> CARAPACE_DERMIS = implant("carapace_dermis", ModImplants.CARAPACE_DERMIS, Rarity.RARE);

@@ -1,0 +1,27 @@
+{
+ "type": "minecraft:crafting_shaped",
+ "category": "misc",
+ "pattern": [
+  "GBG",
+  "CTC",
+  "GBG"
+ ],
+ "key": {
+  "G": {
+   "item": "minecraft:glass_bottle"
+  },
+  "B": {
+   "item": "minecraft:glistering_melon_slice"
+  },
+  "C": {
+   "item": "chromeneon:neural_chip"
+  },
+  "T": {
+   "item": "minecraft:ghast_tear"
+  }
+ },
+ "result": {
+  "id": "chromeneon:hemostat_pump",
+  "count": 1
+ }
+}

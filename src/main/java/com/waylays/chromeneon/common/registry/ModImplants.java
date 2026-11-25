@@ -1,6 +1,7 @@
 package com.waylays.chromeneon.common.registry;
 
 import com.waylays.chromeneon.ChromeNeon;
+import com.waylays.chromeneon.common.config.ServerConfig;
 import com.waylays.chromeneon.common.cyberware.Implant;
 import com.waylays.chromeneon.common.cyberware.implants.ArgusOptics;
 import com.waylays.chromeneon.common.cyberware.implants.CarapaceDermis;
@@ -29,7 +30,13 @@ public final class ModImplants {
     public static final Registry<Implant> REGISTRY = new RegistryBuilder<>(KEY).sync(true).create();
     public static final DeferredRegister<Implant> IMPLANTS = DeferredRegister.create(KEY, ChromeNeon.MODID);
 
-    public static final DeferredHolder<Implant, ChronosAccelerator> CHRONOS_ACCELERATOR = IMPLANTS.register("chronos_accelerator", ChronosAccelerator::new);
+    /** Three models of the operating system: entry level, balanced, top of the line. */
+    public static final DeferredHolder<Implant, ChronosAccelerator> CHRONOS_MK1 = IMPLANTS.register("chronos_mk1",
+            () -> new ChronosAccelerator("MK.I", ServerConfig.CHRONOS_MK1, 18, 6));
+    public static final DeferredHolder<Implant, ChronosAccelerator> CHRONOS_MK2 = IMPLANTS.register("chronos_mk2",
+            () -> new ChronosAccelerator("MK.II", ServerConfig.CHRONOS_MK2, 25, 8));
+    public static final DeferredHolder<Implant, ChronosAccelerator> CHRONOS_MK3 = IMPLANTS.register("chronos_mk3",
+            () -> new ChronosAccelerator("MK.III", ServerConfig.CHRONOS_MK3, 35, 12));
     public static final DeferredHolder<Implant, ReaperBlades> REAPER_BLADES = IMPLANTS.register("reaper_blades", ReaperBlades::new);
     public static final DeferredHolder<Implant, SpringTendons> SPRING_TENDONS = IMPLANTS.register("spring_tendons", SpringTendons::new);
     public static final DeferredHolder<Implant, CarapaceDermis> CARAPACE_DERMIS = IMPLANTS.register("carapace_dermis", CarapaceDermis::new);

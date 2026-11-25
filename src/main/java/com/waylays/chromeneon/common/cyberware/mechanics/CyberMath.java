@@ -39,4 +39,17 @@ public final class CyberMath {
     public static boolean livesThisTick(long gameTime, int entityId, int slowdown) {
         return slowdown <= 1 || Math.floorMod(gameTime + entityId, slowdown) == 0;
     }
+
+    /** A cooldown after the multipliers of other implants, in whole ticks, never negative. */
+    public static int cooldown(int base, double factor) {
+        return (int) Math.max(0, Math.round(base * Math.max(0.0, factor)));
+    }
+
+    /**
+     * Damage multiplier of a hit while the accelerator runs: a roll in [0, 1) under {@code chance} makes it critical,
+     * adding {@code bonus} (0.5 = +50%).
+     */
+    public static float critMultiplier(double roll, double chance, double bonus) {
+        return roll < chance ? 1F + (float) bonus : 1F;
+    }
 }

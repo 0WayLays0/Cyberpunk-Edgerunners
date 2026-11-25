@@ -1,0 +1,178 @@
+{
+ "implant.install": {
+  "sounds": [
+   {
+    "name": "chromeneon:implant_install"
+   }
+  ],
+  "subtitle": "subtitles.chromeneon.implant.install"
+ },
+ "implant.remove": {
+  "sounds": [
+   {
+    "name": "chromeneon:implant_remove"
+   }
+  ],
+  "subtitle": "subtitles.chromeneon.implant.remove"
+ },
+ "accelerator.on": {
+  "sounds": [
+   {
+    "name": "chromeneon:accelerator_on"
+   }
+  ],
+  "subtitle": "subtitles.chromeneon.accelerator.on"
+ },
+ "accelerator.off": {
+  "sounds": [
+   {
+    "name": "chromeneon:accelerator_off"
+   }
+  ],
+  "subtitle": "subtitles.chromeneon.accelerator.off"
+ },
+ "accelerator.crit": {
+  "sounds": [
+   {
+    "name": "chromeneon:accelerator_crit"
+   }
+  ],
+  "subtitle": "subtitles.chromeneon.accelerator.crit"
+ },
+ "blades.deploy": {
+  "sounds": [
+   {
+    "name": "chromeneon:blades_deploy"
+   }
+  ],
+  "subtitle": "subtitles.chromeneon.blades.deploy"
+ },
+ "blades.retract": {
+  "sounds": [
+   {
+    "name": "chromeneon:blades_retract"
+   }
+  ],
+  "subtitle": "subtitles.chromeneon.blades.retract"
+ },
+ "blades.hit": {
+  "sounds": [
+   {
+    "name": "chromeneon:blades_hit"
+   }
+  ],
+  "subtitle": "subtitles.chromeneon.blades.hit"
+ },
+ "blades.lunge": {
+  "sounds": [
+   {
+    "name": "chromeneon:blades_lunge"
+   }
+  ],
+  "subtitle": "subtitles.chromeneon.blades.lunge"
+ },
+ "tendons.jump": {
+  "sounds": [
+   {
+    "name": "chromeneon:tendons_jump"
+   }
+  ],
+  "subtitle": "subtitles.chromeneon.tendons.jump"
+ },
+ "dermis.absorb": {
+  "sounds": [
+   {
+    "name": "chromeneon:dermis_absorb"
+   }
+  ],
+  "subtitle": "subtitles.chromeneon.dermis.absorb"
+ },
+ "dermis.breach": {
+  "sounds": [
+   {
+    "name": "chromeneon:dermis_breach"
+   }
+  ],
+  "subtitle": "subtitles.chromeneon.dermis.breach"
+ },
+ "pump.inject": {
+  "sounds": [
+   {
+    "name": "chromeneon:pump_inject"
+   }
+  ],
+  "subtitle": "subtitles.chromeneon.pump.inject"
+ },
+ "optics.scan": {
+  "sounds": [
+   {
+    "name": "chromeneon:optics_scan"
+   }
+  ],
+  "subtitle": "subtitles.chromeneon.optics.scan"
+ },
+ "optics.zoom": {
+  "sounds": [
+   {
+    "name": "chromeneon:optics_zoom"
+   }
+  ],
+  "subtitle": "subtitles.chromeneon.optics.zoom"
+ },
+ "system.on": {
+  "sounds": [
+   {
+    "name": "chromeneon:system_on"
+   }
+  ],
+  "subtitle": "subtitles.chromeneon.system.on"
+ },
+ "system.off": {
+  "sounds": [
+   {
+    "name": "chromeneon:system_off"
+   }
+  ],
+  "subtitle": "subtitles.chromeneon.system.off"
+ },
+ "malfunction": {
+  "sounds": [
+   {
+    "name": "chromeneon:malfunction"
+   }
+  ],
+  "subtitle": "subtitles.chromeneon.malfunction"
+ },
+ "chair.sit": {
+  "sounds": [
+   {
+    "name": "chromeneon:chair_sit"
+   }
+  ],
+  "subtitle": "subtitles.chromeneon.chair.sit"
+ },
+ "ui.hover": {
+  "sounds": [
+   {
+    "name": "chromeneon:ui_hover"
+   }
+  ],
+  "subtitle": "subtitles.chromeneon.ui.hover"
+ },
+ "ui.click": {
+  "sounds": [
+   {
+    "name": "chromeneon:ui_click"
+   }
+  ],
+  "subtitle": "subtitles.chromeneon.ui.click"
+ },
+ "ui.error": {
+  "sounds": [
+   {
+    "name": "chromeneon:ui_error"
+   }
+  ],
+  "subtitle": "subtitles.chromeneon.ui.error"
+ }
+}

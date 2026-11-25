@@ -107,6 +107,14 @@ public final class HudText {
         return font().width(text);
     }
 
+    /** {@code text} in {@code kind}, cut to fit {@code room} with a final dot when cut. */
+    public static Component fit(Kind kind, String text, float room) {
+        if (width(of(kind, text)) <= room) return of(kind, text);
+        String t = text;
+        while (t.length() > 1 && width(of(kind, t + ".")) > room) t = t.substring(0, t.length() - 1);
+        return of(kind, t.trim() + ".");
+    }
+
     /**
      * Draws at a fractional position over a one-screen-pixel dark offset copy, so light text stays readable on snow
      * or sky without a heavy shadow. Dark text gets no shadow.

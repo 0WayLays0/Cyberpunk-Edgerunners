@@ -13,10 +13,17 @@ public final class HudVisibility {
         return ClientConfig.HUD_ENABLED.get() && mc.player != null && mc.level != null && !mc.options.hideGui;
     }
 
-    /** Panels step aside while the debug screen (F3) covers the corners. */
+    /**
+     * Panels step aside while the debug screen (F3) covers the corners, and under the mod's full-screen interfaces
+     * (cyberware, surgery), which show the same data themselves.
+     */
     public static boolean panels() {
-        return hud() && !Minecraft.getInstance().getDebugOverlay().showDebugScreen();
+        Minecraft mc = Minecraft.getInstance();
+        return hud() && !mc.getDebugOverlay().showDebugScreen() && !(mc.screen instanceof FullScreenInterface);
     }
+
+    /** Marks a screen that covers the whole HUD. */
+    public interface FullScreenInterface {}
 
     /** Health and armor follow the game's rule: only shown where the player can be hurt. */
     public static boolean vulnerable() {

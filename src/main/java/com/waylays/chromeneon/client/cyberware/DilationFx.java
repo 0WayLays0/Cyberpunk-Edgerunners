@@ -5,7 +5,6 @@ import com.waylays.chromeneon.client.hud.anim.Easing;
 import com.waylays.chromeneon.client.hud.draw.HudDraw;
 import com.waylays.chromeneon.client.hud.theme.HudText;
 import com.waylays.chromeneon.client.hud.theme.NeonPalette;
-import com.waylays.chromeneon.common.registry.ModImplants;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 
@@ -17,8 +16,9 @@ public final class DilationFx {
     private DilationFx() {}
 
     public static void render(GuiGraphics g, HudFrame f) {
-        var state = ClientCyberware.state(ModImplants.CHRONOS_ACCELERATOR.get()).orElse(null);
-        if (state == null) return;
+        var accelerator = ClientCyberware.accelerator().orElse(null);
+        if (accelerator == null) return;
+        var state = accelerator.state();
         long now = ClientCyberware.now();
         boolean running = state.active && now < state.activeUntil;
         float since = now - state.changedAt;
@@ -41,7 +41,7 @@ public final class DilationFx {
         if (running) {
             float left = (state.activeUntil - now) / 20F;
             Component t = HudText.value(String.format(java.util.Locale.ROOT, "%.1f", left));
-            Component l = HudText.label("CHRONOS // TIME DILATION");
+            Component l = HudText.label("CHRONOS " + accelerator.implant().model() + " // TIME DILATION");
             float cy = f.height / 2F + 22F;
             HudText.draw(g, t, (f.width - HudText.width(t)) / 2F, cy, NeonPalette.alpha(NeonPalette.WHITE, k), f.screenPx);
             HudText.draw(g, l, (f.width - HudText.width(l)) / 2F, cy + HudText.Kind.VALUE.cap() + 3F, NeonPalette.alpha(NeonPalette.VIOLET_HOT, k), f.screenPx);

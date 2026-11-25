@@ -3,7 +3,6 @@ package com.waylays.chromeneon.client.cyberware;
 import com.waylays.chromeneon.ChromeNeon;
 import com.waylays.chromeneon.common.config.ServerConfig;
 import com.waylays.chromeneon.common.cyberware.mechanics.CyberMath;
-import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
@@ -12,10 +11,12 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
+import java.util.Map;
+
 /**
- * The accelerator as this player sees it: while their own time dilation runs, the client slows the same entities
- * the server slows (same zone, same rhythm), so animations match the slowed movement instead of running at full
- * speed on the spot.
+ * Time dilation as clients see it: around every player running an accelerator (this one included), the client
+ * slows the same entities the server slows (same zone, same rhythm), so their animations match the slowed movement
+ * instead of running at full speed on the spot.
  */
 @EventBusSubscriber(modid = ChromeNeon.MODID, value = Dist.CLIENT)
 public final class DilationClient {
@@ -25,13 +26,15 @@ public final class DilationClient {
     public static void onEntityTick(EntityTickEvent.Pre event) {
         Entity entity = event.getEntity();
         if (!entity.level().isClientSide() || entity instanceof Player) return;
-        var player = Minecraft.getInstance().player;
-        if (player == null || !ClientCyberware.dilating()) return;
-        if (entity instanceof Projectile p && p.getOwner() == player) return;
+        Map<Integer, Integer> dilations = ClientCyberware.dilations();
+        if (dilations.isEmpty()) return;
         double r = ServerConfig.ACCEL_RADIUS.get();
-        if (entity.distanceToSqr(player) > r * r) return;
-        if (!CyberMath.livesThisTick(entity.level().getGameTime(), entity.getId(), ServerConfig.ACCEL_SLOWDOWN.get())) {
-            event.setCanceled(true);
+        for (var e : dilations.entrySet()) {
+            Entity owner = entity.level().getEntity(e.getKey());
+            if (owner == null || entity.distanceToSqr(owner) > r * r) continue;
+            if (entity instanceof Projectile p && p.getOwner() == owner) continue;
+            if (!CyberMath.livesThisTick(entity.level().getGameTime(), entity.getId(), e.getValue())) event.setCanceled(true);
+            return;
         }
     }
 }

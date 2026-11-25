@@ -44,6 +44,18 @@ public final class Cyberware {
         return of(player, implant).stream().anyMatch(ImplantContext::working);
     }
 
+    /** An installed implant of a given class, with its context. */
+    public record Fitted<T extends Implant>(T implant, ImplantContext ctx) {}
+
+    /** Every installed implant of a class: each model of the accelerator, for instance. */
+    public static <T extends Implant> List<Fitted<T>> ofType(ServerPlayer player, Class<T> type) {
+        List<Fitted<T>> out = new ArrayList<>();
+        for (ImplantContext ctx : all(player)) {
+            implant(ctx).filter(type::isInstance).ifPresent(i -> out.add(new Fitted<>(type.cast(i), ctx)));
+        }
+        return out;
+    }
+
     public static Optional<Implant> implant(ImplantContext ctx) {
         return ModImplants.get(ctx.installed().id());
     }

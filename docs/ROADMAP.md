@@ -4,10 +4,7 @@ Une phase n'est commencée que lorsque la précédente compile, passe ses tests 
 
 1. **Fondations** — terminée. Voir le README pour le détail de ce qui fonctionne.
 2. **HUD Chrome Néon** — terminée. Voir [HUD.md](HUD.md) et les [captures](screenshots/).
-3. **Cyberware** — fauteuil de charcudoc (installation/retrait), interface de gestion, jauge d'humanité, implants
-   fonctionnels par emplacement : accélérateur temporel (Système), optiques (scanner, zoom), lames (Bras),
-   double saut (Jambes), peau blindée (Dermique), pompe médicale (Circulatoire), biopuce (VESPER). Interactions entre
-   implants, activation/désactivation, sons originaux.
+3. **Cyberware** — terminée. Voir [CYBERWARE.md](CYBERWARE.md) et les [captures](screenshots/phase3/).
 4. **Hacking** — mode scanner, niveaux d'accès, file d'upload, hacks sur entités, caméras, portes et machines,
    résistance/sécurité, cooldowns, coûts en RAM.
 5. **Caméra numérique** — appareil physique, filtre basse résolution, zoom, batterie, REC, timecode, captures.
@@ -16,15 +13,18 @@ Une phase n'est commencée que lorsque la précédente compile, passe ses tests 
 
 ## Pas encore développé (honnêtement)
 
-- Aucun implant n'est enregistré ; les règles et les données sont prêtes, les implants arrivent en phase 3.
-- Le fauteuil de charcudoc est un bloc orientable sans interaction.
-- Hacking : seule la ressource RAM existe (régénération, consommation testée) et son affichage complet (cellules,
-  recharge, RAM insuffisante). Aucun hack ne la consomme encore ; l'affichage « RAM insuffisante » est appelé par
-  `/cnhud ram` en attendant.
-- Scanner : il fonctionne pour tous (touche V) ; il sera lié aux optiques en phase 3/4. Le mode scanner qui
-  transforme visuellement le monde (filtre, surbrillance des cibles à travers le décor) est prévu en phase 4.
-- Appels : le popup, ses touches et ses issues fonctionnent, mais aucun système d'appel ne l'utilise encore
-  (testé par `/cnhud call`).
-- Sons : aucun son original pour le moment (le scanner de diagnostic utilise un son vanilla). Prévu en phase 7.
+- Hacking (phase 4) : la RAM est une vraie ressource (dépensée par l'accélérateur et l'analyse tactique), mais
+  aucun quickhack n'existe encore.
+- Le scanner (V) fonctionne avec les optiques ; le mode scanner qui transforme visuellement le monde arrive en phase 4.
+- Biopuce : seul le Coprocesseur Synapse l'occupe ; VESPER arrive en phase 6.
+- Appels : le popup fonctionne, aucun système d'appel ne l'utilise encore (testé par `/cnhud call`).
 - Mini-carte : limitée aux chunks chargés par le client (voir [HUD.md](HUD.md)).
-- Pas de recette d'artisanat : les objets sont accessibles en créatif et par commande.
+
+## Limites connues de la phase 3
+
+- Le ralentissement du Chronos s'applique aux entités. Les blocs, fluides, plantes et la redstone ne sont pas
+  ralentis, et les autres joueurs non plus (un serveur ne peut pas ralentir un client).
+- Le double saut est appliqué par le client, car Minecraft laisse le client calculer le mouvement du joueur. Le
+  serveur valide les charges et l'état, et remet la chute à zéro, mais ne recalcule pas la trajectoire.
+- Les lames n'ont pas de modèle dédié dans l'inventaire (elles sont rendues sur le bras quand elles sont sorties).
+- Les images rémanentes sont dessinées sur le modèle du joueur, sans armure ni objets tenus.

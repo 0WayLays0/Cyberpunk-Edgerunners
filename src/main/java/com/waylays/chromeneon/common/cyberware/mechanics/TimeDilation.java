@@ -41,8 +41,13 @@ public final class TimeDilation {
     }
 
     public static boolean isDilating(Player player) {
+        return slowdown(player) > 1;
+    }
+
+    /** The slowdown of the player's running zone, or 0 when none runs. */
+    public static int slowdown(Player player) {
         Field f = FIELDS.get(player.getUUID());
-        return f != null && player.level().getGameTime() < f.until();
+        return f != null && player.level().getGameTime() < f.until() ? f.slowdown() : 0;
     }
 
     /** Moves each zone with its owner; drops the zones of players gone or expired. */

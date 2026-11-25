@@ -1,10 +1,12 @@
 package com.waylays.chromeneon.server;
 
+import com.waylays.chromeneon.common.network.ChromeNetwork;
 import com.waylays.chromeneon.common.block.RipperdocChairBlock;
 import com.waylays.chromeneon.common.config.ServerConfig;
 import com.waylays.chromeneon.common.cyberware.CyberwareService;
 import com.waylays.chromeneon.common.cyberware.InstallResult;
 import com.waylays.chromeneon.common.cyberware.UseResult;
+import com.waylays.chromeneon.common.cyberware.implants.ChronosAccelerator;
 import com.waylays.chromeneon.common.cyberware.mechanics.AirJump;
 import com.waylays.chromeneon.common.cyberware.mechanics.BladeCombat;
 import com.waylays.chromeneon.common.network.ActionFeedbackPayload;
@@ -13,7 +15,6 @@ import com.waylays.chromeneon.common.network.ImplantTriggerPayload;
 import com.waylays.chromeneon.common.player.CyberData;
 import com.waylays.chromeneon.common.registry.ModImplants;
 import net.minecraft.server.level.ServerPlayer;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -55,7 +56,7 @@ public final class CyberwareRequests {
     public static void handle(ServerPlayer player, ImplantTriggerPayload trigger) {
         if (!allowed(player)) return;
         UseResult result = switch (trigger.trigger()) {
-            case ACCELERATOR -> CyberwareService.use(player, ModImplants.CHRONOS_ACCELERATOR.get());
+            case ACCELERATOR -> CyberwareService.use(player, ChronosAccelerator.class);
             case BLADES -> CyberwareService.useAll(player, ModImplants.REAPER_BLADES.get());
             case LUNGE -> BladeCombat.lunge(player, CyberData.get(player), trigger.target());
             case AIR_JUMP -> AirJump.jump(player);
@@ -75,9 +76,7 @@ public final class CyberwareRequests {
     }
 
     static void feedback(ServerPlayer player, String key, boolean ok, int ram) {
-        if (player.connection != null && player.connection.hasChannel(ActionFeedbackPayload.TYPE)) {
-            PacketDistributor.sendToPlayer(player, new ActionFeedbackPayload(key, ok, ram));
-        }
+        ChromeNetwork.send(player, new ActionFeedbackPayload(key, ok, ram));
     }
 
     static void forget(ServerPlayer player) {

@@ -17,7 +17,12 @@ public final class ServerConfig {
 
     public static final ModConfigSpec.IntValue BASE_RAM, RAM_CAP, RAM_REGEN_TICKS;
 
-    public static final ModConfigSpec.IntValue ACCEL_DURATION, ACCEL_COOLDOWN, ACCEL_RAM, ACCEL_RADIUS, ACCEL_SLOWDOWN;
+    /** The balance of one accelerator model. */
+    public record ChronosModel(ModConfigSpec.IntValue duration, ModConfigSpec.IntValue cooldown, ModConfigSpec.IntValue slowdown,
+                               ModConfigSpec.DoubleValue critChance, ModConfigSpec.DoubleValue critDamage) {}
+
+    public static final ModConfigSpec.IntValue ACCEL_RAM, ACCEL_RADIUS;
+    public static final ChronosModel CHRONOS_MK1, CHRONOS_MK2, CHRONOS_MK3;
 
     public static final ModConfigSpec.DoubleValue BLADE_DAMAGE, BLADE_SPEED, LUNGE_SPEED, LUNGE_DAMAGE, DILATION_BLADE_BONUS;
     public static final ModConfigSpec.IntValue LUNGE_COOLDOWN;
@@ -34,7 +39,7 @@ public final class ServerConfig {
     public static final ModConfigSpec.DoubleValue OPTICS_MAX_ZOOM;
     public static final ModConfigSpec.IntValue TACTICAL_DURATION, TACTICAL_COOLDOWN, TACTICAL_RAM, TACTICAL_RANGE;
 
-    public static final ModConfigSpec.DoubleValue COPROCESSOR_REGEN;
+    public static final ModConfigSpec.DoubleValue COPROCESSOR_REGEN, COPROCESSOR_COOLDOWN;
 
     static {
         ModConfigSpec.Builder b = new ModConfigSpec.Builder();
@@ -66,11 +71,11 @@ public final class ServerConfig {
         b.pop();
 
         b.push("chronos_accelerator");
-        ACCEL_DURATION = b.comment("Ticks the time dilation lasts.").defineInRange("durationTicks", 120, 10, 2400);
-        ACCEL_COOLDOWN = b.comment("Ticks before it can run again, counted from its end.").defineInRange("cooldownTicks", 500, 0, 24000);
-        ACCEL_RAM = b.comment("RAM cells spent to start it.").defineInRange("ramCost", 2, 0, 16);
+        ACCEL_RAM = b.comment("RAM cells spent to start any model.").defineInRange("ramCost", 2, 0, 16);
         ACCEL_RADIUS = b.comment("Radius, in blocks, of the slowed zone around the player.").defineInRange("radius", 24, 4, 64);
-        ACCEL_SLOWDOWN = b.comment("Inside the zone, other entities live one tick out of this many.").defineInRange("slowdown", 4, 2, 10);
+        CHRONOS_MK1 = chronos(b, "mk1", 100, 600, 3, 0.10, 0.5);
+        CHRONOS_MK2 = chronos(b, "mk2", 120, 500, 4, 0.20, 0.5);
+        CHRONOS_MK3 = chronos(b, "mk3", 160, 700, 6, 0.15, 1.0);
         b.pop();
 
         b.push("reaper_blades");
@@ -114,11 +119,26 @@ public final class ServerConfig {
         b.push("synapse_coprocessor");
         COPROCESSOR_REGEN = b.comment("RAM regeneration time multiplier while installed (0.7 = 30% faster).")
                 .defineInRange("regenMultiplier", 0.7, 0.1, 1.0);
+        COPROCESSOR_COOLDOWN = b.comment("Share taken off the operating system's cooldowns while installed (0.15 = 15% shorter).")
+                .defineInRange("systemCooldownReduction", 0.15, 0.0, 0.9);
         b.pop();
         SPEC = b.build();
     }
 
     private ServerConfig() {}
+
+    private static ChronosModel chronos(ModConfigSpec.Builder b, String name, int duration, int cooldown, int slowdown,
+                                        double critChance, double critDamage) {
+        b.push(name);
+        ChronosModel model = new ChronosModel(
+                b.comment("Ticks the time dilation lasts.").defineInRange("durationTicks", duration, 10, 2400),
+                b.comment("Ticks before it can run again, counted from its end (before reductions).").defineInRange("cooldownTicks", cooldown, 0, 24000),
+                b.comment("Inside the zone, other entities live one tick out of this many.").defineInRange("slowdown", slowdown, 2, 10),
+                b.comment("While it runs, chance that a hit of the user is critical.").defineInRange("critChance", critChance, 0.0, 1.0),
+                b.comment("Damage a critical hit adds, as a share of the hit (0.5 = +50%).").defineInRange("critDamage", critDamage, 0.0, 5.0));
+        b.pop();
+        return model;
+    }
 
     /** Reach used by the in-combat check: a player hurt within this many ticks cannot undergo surgery. */
     public static boolean inCombat(Player player, long lastHurtAt) {

@@ -89,7 +89,7 @@ public final class BladeCombat {
         if (dir.lengthSqr() < 1e-4) return UseResult.NOT_NOW;
         int cooldown = ServerConfig.LUNGE_COOLDOWN.get();
         if (TimeDilation.isDilating(player)) cooldown /= 2;
-        long ready = now + cooldown;
+        long ready = now + Cooldowns.of(first, ModImplants.REAPER_BLADES.get(), cooldown);
         blades.forEach(b -> b.state().cooldownUntil = ready);
         double speed = ServerConfig.LUNGE_SPEED.get();
         player.setDeltaMovement(dir.x * speed, 0.12, dir.z * speed);

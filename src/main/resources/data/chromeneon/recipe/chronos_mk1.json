@@ -1,0 +1,27 @@
+{
+ "type": "minecraft:crafting_shaped",
+ "category": "misc",
+ "pattern": [
+  "ICI",
+  "CRC",
+  "EIE"
+ ],
+ "key": {
+  "I": {
+   "item": "minecraft:iron_block"
+  },
+  "C": {
+   "item": "chromeneon:neural_chip"
+  },
+  "R": {
+   "item": "minecraft:clock"
+  },
+  "E": {
+   "item": "minecraft:ender_eye"
+  }
+ },
+ "result": {
+  "id": "chromeneon:chronos_mk1",
+  "count": 1
+ }
+}

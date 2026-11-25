@@ -37,7 +37,9 @@ import java.util.Map;
  * to its sockets, the humanity, capacity and RAM gauges, and the technical sheet of the selected implant with its
  * live state and its switch. Installation and removal happen in {@link RipperdocScreen}, at a ripperdoc chair.
  */
-public class CyberwareScreen extends Screen {
+public class CyberwareScreen extends Screen implements com.waylays.chromeneon.client.hud.HudVisibility.FullScreenInterface {
+    /** Width of a slot's label column. */
+    private static final float COL = 96F;
     private static final ResourceLocation BODY = ChromeNeon.id("textures/gui/body.png");
     /** Node of each region on the body image (fractions of its width and height) and the side of its label. */
     private static final Map<BodySlot.Region, float[]> ANCHORS = Map.of(
@@ -175,7 +177,7 @@ public class CyberwareScreen extends Screen {
         g.pose().popPose();
         g.setColor(1F, 1F, 1F, 1F);
 
-        float leftCol = bx - 92F, rightCol = bx + bw + 16F;
+        float leftCol = bx - COL - 10F, rightCol = bx + bw + 16F;
         float[] nextY = {by - 2F, by - 2F};
         List<Map.Entry<net.minecraft.resources.ResourceKey<BodySlot>, BodySlot>> slots = new ArrayList<>(ModBodySlots.REGISTRY.entrySet());
         slots.sort((a, b) -> Float.compare(ANCHORS.getOrDefault(a.getValue().region(), new float[] {0, 0.5F, 1})[1],
@@ -195,9 +197,9 @@ public class CyberwareScreen extends Screen {
             int color = highlight ? NeonPalette.CYAN : NeonPalette.VIOLET_HOT;
             float pulse = highlight ? 0.6F + 0.4F * (float) Math.sin(Util.getMillis() / 150.0) : 1F;
             // Leader: node on the body, a diagonal, then along the label
-            float joinX = left ? lx + 82F : lx - 2F;
+            float joinX = left ? lx + COL : lx - 2F;
             HudDraw.line(g, nx, ny, joinX, ly + 3F, px, NeonPalette.alpha(color, 0.6F * k));
-            HudDraw.rect(g, Math.min(joinX, left ? lx : lx + 82F), ly + 3F, Math.max(joinX, left ? lx : lx + 82F), ly + 3F + px,
+            HudDraw.rect(g, Math.min(joinX, left ? lx : lx + COL), ly + 3F, Math.max(joinX, left ? lx : lx + COL), ly + 3F + px,
                     NeonPalette.alpha(color, 0.5F * k));
             HudDraw.diamond(g, nx, ny, 2.2F, NeonPalette.alpha(NeonPalette.VOID, 0.8F * k));
             HudDraw.diamond(g, nx, ny, 1.6F, NeonPalette.alpha(color, pulse * k));
@@ -208,19 +210,19 @@ public class CyberwareScreen extends Screen {
                 float ry = ly + 6F + i * 9F;
                 Socket socket = new Socket(id, i);
                 boolean sel = socket.equals(selected);
-                boolean hover = mx >= lx && mx <= lx + 82F && my >= ry && my <= ry + 8F;
-                if (sel || hover) HudDraw.veil(g, lx - 2F, ry - 1F, lx + 84F, ry + 8F, 2F, NeonPalette.alpha(color, sel ? 0.3F : 0.15F), 0);
+                boolean hover = mx >= lx && mx <= lx + COL && my >= ry && my <= ry + 8F;
+                if (sel || hover) HudDraw.veil(g, lx - 2F, ry - 1F, lx + COL + 2F, ry + 8F, 2F, NeonPalette.alpha(color, sel ? 0.3F : 0.15F), 0);
                 if (sel) HudDraw.rect(g, lx - 2F, ry - 1F, lx - 2F + px * 2, ry + 8F, NeonPalette.alpha(color, 1F));
                 if (i < in.size()) {
                     InstalledImplant implant = in.get(i);
-                    HudText.draw(g, HudText.of(HudText.Kind.BODY, Component.translatable("chromeneon.implant." + implant.id().getPath())),
-                            lx + 2F, ry, NeonPalette.alpha(NeonPalette.WHITE, k), px);
-                    stateChip(g, implant.state(), lx + 82F, ry + 1F, k);
+                    float chip = stateChip(g, implant.state(), lx + COL, ry + 1F, k);
+                    String name = Component.translatable("chromeneon.implant." + implant.id().getPath()).getString();
+                    HudText.draw(g, HudText.fit(HudText.Kind.BODY, name, COL - 6F - chip), lx + 2F, ry, NeonPalette.alpha(NeonPalette.WHITE, k), px);
                 } else {
                     HudText.draw(g, HudText.label(Component.translatable("chromeneon.screen.empty_socket")), lx + 2F, ry + 1F,
                             NeonPalette.alpha(highlight ? NeonPalette.CYAN : NeonPalette.LAVENDER, (highlight ? pulse : 0.5F) * k), px);
                 }
-                hits.add(new Hit(lx - 2F, ry - 1F, lx + 84F, ry + 8F, () -> {
+                hits.add(new Hit(lx - 2F, ry - 1F, lx + COL + 2F, ry + 8F, () -> {
                     selected = socket;
                     play(ModSounds.UI_CLICK.get());
                 }));
@@ -228,12 +230,19 @@ public class CyberwareScreen extends Screen {
         }
     }
 
+    /** Left edge of the sheet on the right: after the body and its right column, at 64% of the width at least. */
+    protected float panelX() {
+        float bw = Math.min(height - 60F, 250F) / 2F;
+        return Math.max(width * 0.64F, width * 0.36F + bw / 2F + 16F + COL + 8F);
+    }
+
     /** Slots to make pulse (the ripperdoc highlights those that accept the chosen implant). */
     protected boolean highlightSlot(ResourceLocation slot) {
         return false;
     }
 
-    private void stateChip(GuiGraphics g, ImplantState s, float right, float y, float k) {
+    /** Draws the state right-aligned; returns its width. */
+    private float stateChip(GuiGraphics g, ImplantState s, float right, float y, float k) {
         long now = ClientCyberware.now();
         String key;
         int color;
@@ -255,11 +264,12 @@ public class CyberwareScreen extends Screen {
         }
         Component t = HudText.label(Component.translatable("chromeneon.screen.state." + key));
         HudText.drawRight(g, t, right, y, NeonPalette.alpha(color, k), px);
+        return HudText.width(t);
     }
 
     /** The technical sheet of the selected socket. */
     private void panel(GuiGraphics g, SyncCyberStatePayload state, int mx, int my) {
-        float x = width * 0.64F, w = width - 14F - x, y = 64F;
+        float x = panelX(), w = width - 14F - x, y = 64F;
         if (selected == null) {
             HudText.draw(g, HudText.label(Component.translatable("chromeneon.screen.select")), x, y, NeonPalette.LAVENDER, px);
             return;

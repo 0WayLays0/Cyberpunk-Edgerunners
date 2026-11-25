@@ -95,7 +95,7 @@ public final class NotificationsGroup extends HudGroup {
         icon.draw(g, x + 6F, y + 1.5F, 7F, f.c(color, alpha));
         Component code = HudText.label(style.code());
         float codeW = f.minimal ? 0F : HudText.width(code) + 6F;
-        String title = fit(HudText.title(n.title).getString(), W - 16F - 4F - codeW);
+        String title = HudText.fit(HudText.Kind.TITLE, HudText.title(n.title).getString(), W - 16F - 4F - codeW).getString();
         float type = Easing.clamp((age - 3F) / 8F);
         HudText.draw(g, HudText.title(HudText.reveal(title, type)), x + 16F, y + 2F, f.c(NeonPalette.WHITE, alpha), px);
 
@@ -126,14 +126,6 @@ public final class NotificationsGroup extends HudGroup {
             }
             HudText.drawRight(g, HudText.data(Math.round(p * 100) + "%"), x + W - 6F, ly, f.c(color, alpha), px);
         }
-    }
-
-    /** The title cut to fit the room before the code label, with a final dot when cut. */
-    private static String fit(String title, float room) {
-        if (HudText.width(HudText.title(title)) <= room) return title;
-        String t = title;
-        while (t.length() > 1 && HudText.width(HudText.title(t + ".")) > room) t = t.substring(0, t.length() - 1);
-        return t.trim() + ".";
     }
 
     /** How many messages fit between the group's top and the experience bar (its offset scales with the HUD). */

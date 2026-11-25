@@ -13,6 +13,9 @@ import java.util.Set;
  * implant overrides as it needs. Hooks run on the server only.
  */
 public abstract class Implant {
+    /** Exclusive group of the body's operating system: one per body (accelerator now, cyberdeck later). */
+    public static final String OPERATING_SYSTEM = "operating_system";
+
     /** How the player uses it. */
     public enum Mode {
         /** Always working while enabled (armor plating, coprocessor). */
@@ -69,6 +72,19 @@ public abstract class Implant {
     /** RAM cells it adds while working. */
     public int ramBonus() {
         return properties.ramBonus;
+    }
+
+    /** Whether it is the body's operating system. */
+    public final boolean operatingSystem() {
+        return properties.exclusiveGroup.filter(OPERATING_SYSTEM::equals).isPresent();
+    }
+
+    /**
+     * Multiplier this implant, while working, applies to the cooldowns of {@code other} (1 = none). See
+     * {@link com.waylays.chromeneon.common.cyberware.mechanics.Cooldowns}.
+     */
+    public double cooldownFactor(Implant other) {
+        return 1.0;
     }
 
     /** Lines of technical description for the interfaces (mechanics and numbers, from the current config). */

@@ -1,6 +1,7 @@
 package com.waylays.chromeneon.client.cyberware;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.waylays.chromeneon.ChromeNeon;
 import com.waylays.chromeneon.client.hud.theme.NeonPalette;
@@ -22,6 +23,8 @@ import net.minecraft.world.entity.player.Player;
 public final class BladeRenderer {
     private static final ResourceLocation TEXTURE = ChromeNeon.id("textures/entity/reaper_blade.png");
     private static final float P = 1F / 16F;
+    /** Degrees the blade turns around the forearm. */
+    private static final float TWIST = 35F;
 
     private BladeRenderer() {}
 
@@ -47,6 +50,11 @@ public final class BladeRenderer {
         float len = 15F * extension;
         // Blade outline in (y, z), pixels: base on the forearm, belly, tip beyond the hand, spine back
         float[][] shape = {{3.5F, 1.4F}, {3.5F, -1.2F}, {9F + len * 0.55F, -1.9F}, {9F + len, 0.1F}, {9F + len * 0.5F, 1.3F}};
+        // Twisted a little around the forearm, so the flat of the blade shows from the front as well as from the side
+        pose.pushPose();
+        pose.translate(side * 3.25F * P, 0F, 0F);
+        pose.mulPose(Axis.YP.rotationDegrees(side * TWIST));
+        pose.translate(-side * 3.25F * P, 0F, 0F);
         PoseStack.Pose last = pose.last();
         VertexConsumer steel = buffers.getBuffer(RenderType.entityCutoutNoCull(TEXTURE));
         face(steel, last, shape, x1, side, light);
@@ -57,6 +65,7 @@ public final class BladeRenderer {
         // The cutting edge: belly to tip, drawn as a thin glowing ribbon just outside the blade
         edgeLine(glow, last, xe, shape[1], shape[2], edge);
         edgeLine(glow, last, xe, shape[2], shape[3], edge);
+        pose.popPose();
     }
 
     private static void face(VertexConsumer vc, PoseStack.Pose pose, float[][] s, float x, float normal, int light) {

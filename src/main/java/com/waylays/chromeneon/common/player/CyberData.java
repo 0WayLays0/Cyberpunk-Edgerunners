@@ -1,5 +1,6 @@
 package com.waylays.chromeneon.common.player;
 
+import com.waylays.chromeneon.common.network.ChromeNetwork;
 import com.waylays.chromeneon.common.config.ServerConfig;
 import com.waylays.chromeneon.common.cyberware.Cyberware;
 import com.waylays.chromeneon.common.cyberware.CyberwareCatalog;
@@ -8,7 +9,6 @@ import com.waylays.chromeneon.common.registry.ModAttachments;
 import com.waylays.chromeneon.common.registry.ModImplants;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 /** Server-side access to a player's cyber data: reading it, computing its stats and sending it to its owner. */
 public final class CyberData {
@@ -43,8 +43,8 @@ public final class CyberData {
      * did not negotiate the mod's channel (fake players, test players), which would otherwise throw.
      */
     public static void sync(ServerPlayer player) {
+        // Building the state costs something: skip it for connections that cannot receive it
         if (player.connection == null || !player.connection.hasChannel(SyncCyberStatePayload.TYPE)) return;
-        PlayerCyberData data = get(player);
-        PacketDistributor.sendToPlayer(player, new SyncCyberStatePayload(stats(player), data.loadout().copy()));
+        ChromeNetwork.send(player, new SyncCyberStatePayload(stats(player), get(player).loadout().copy()));
     }
 }

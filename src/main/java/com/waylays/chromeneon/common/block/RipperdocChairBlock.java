@@ -1,5 +1,6 @@
 package com.waylays.chromeneon.common.block;
 
+import com.waylays.chromeneon.common.network.ChromeNetwork;
 import com.mojang.serialization.MapCodec;
 import com.waylays.chromeneon.common.entity.SeatEntity;
 import com.waylays.chromeneon.common.network.OpenRipperdocPayload;
@@ -26,7 +27,6 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.EnumMap;
 import java.util.Map;
@@ -103,9 +103,7 @@ public class RipperdocChairBlock extends HorizontalDirectionalBlock implements E
             sp.setYRot(state.getValue(FACING).toYRot());
             level.playSound(null, pos, ModSounds.CHAIR_SIT.get(), SoundSource.BLOCKS, 0.8F, 1F);
         }
-        if (sp.connection != null && sp.connection.hasChannel(OpenRipperdocPayload.TYPE)) {
-            PacketDistributor.sendToPlayer(sp, new OpenRipperdocPayload(pos));
-        }
+        ChromeNetwork.send(sp, new OpenRipperdocPayload(pos));
         return InteractionResult.CONSUME;
     }
 

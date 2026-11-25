@@ -69,7 +69,8 @@ public class RipperdocScreen extends CyberwareScreen {
                 state.stats().maxHumanity(), state.stats().capacity());
         boolean seated = Minecraft.getInstance().player.getVehicle() instanceof SeatEntity;
         if (verdict.ok() && !seated) verdict = InstallResult.NOT_SEATED;
-        Component v = HudText.data(Component.translatable(verdict.translationKey(), Component.translatable("chromeneon.implant." + item.implantId().getPath())));
+        String key = verdict.ok() ? "chromeneon.screen.can_install" : verdict.translationKey();
+        Component v = HudText.data(Component.translatable(key, Component.translatable("chromeneon.implant." + item.implantId().getPath())));
         HudText.draw(g, v, x, ly + 2F, verdict.ok() ? NeonPalette.CYAN : NeonPalette.ORANGE, px);
         Socket at = selected;
         int slot = chosenItem;
@@ -91,7 +92,7 @@ public class RipperdocScreen extends CyberwareScreen {
         for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
             if (player.getInventory().getItem(i).getItem() instanceof ImplantItem) slots.add(i);
         }
-        float x = width * 0.64F, y = height - 14F - 10F - Math.min(6, Math.max(1, slots.size())) * 10F - 12F;
+        float x = panelX(), y = height - 14F - 10F - Math.min(6, Math.max(1, slots.size())) * 10F - 12F;
         HudText.draw(g, HudText.label(Component.translatable("chromeneon.screen.carried")), x, y, NeonPalette.CYAN_SOFT, px);
         HudDraw.rect(g, x, y + 6F, width - 14F, y + 6F + px, NeonPalette.alpha(NeonPalette.CYAN, 0.4F));
         if (slots.isEmpty()) {

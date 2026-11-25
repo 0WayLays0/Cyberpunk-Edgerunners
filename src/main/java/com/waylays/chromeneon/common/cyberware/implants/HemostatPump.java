@@ -3,6 +3,7 @@ package com.waylays.chromeneon.common.cyberware.implants;
 import com.waylays.chromeneon.common.config.ServerConfig;
 import com.waylays.chromeneon.common.cyberware.Implant;
 import com.waylays.chromeneon.common.cyberware.ImplantContext;
+import com.waylays.chromeneon.common.cyberware.mechanics.Cooldowns;
 import com.waylays.chromeneon.common.cyberware.mechanics.CyberMath;
 import com.waylays.chromeneon.common.hud.HudMessages;
 import com.waylays.chromeneon.common.hud.NotificationKind;
@@ -66,7 +67,7 @@ public final class HemostatPump extends Implant {
             return false;
         }
         ctx.state().charges--;
-        ctx.state().cooldownUntil = ctx.now() + ServerConfig.PUMP_COOLDOWN.get();
+        ctx.state().cooldownUntil = ctx.now() + Cooldowns.of(ctx, this, ServerConfig.PUMP_COOLDOWN.get());
         ctx.state().setActive(true, ctx.now());
         ctx.state().activeUntil = ctx.now() + SPREAD_TICKS;
         p.heal(ServerConfig.PUMP_HEAL.get().floatValue() / 2F);

@@ -1,0 +1,24 @@
+{
+ "type": "minecraft:crafting_shaped",
+ "category": "misc",
+ "pattern": [
+  "RCR",
+  "CQC",
+  "RCR"
+ ],
+ "key": {
+  "R": {
+   "item": "minecraft:redstone_block"
+  },
+  "C": {
+   "item": "chromeneon:neural_chip"
+  },
+  "Q": {
+   "item": "minecraft:quartz_block"
+  }
+ },
+ "result": {
+  "id": "chromeneon:synapse_coprocessor",
+  "count": 1
+ }
+}

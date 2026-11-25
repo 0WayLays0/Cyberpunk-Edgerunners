@@ -1,0 +1,27 @@
+{
+ "type": "minecraft:crafting_shaped",
+ "category": "misc",
+ "pattern": [
+  "GSG",
+  "ECE",
+  "GSG"
+ ],
+ "key": {
+  "G": {
+   "item": "minecraft:tinted_glass"
+  },
+  "S": {
+   "item": "minecraft:spyglass"
+  },
+  "E": {
+   "item": "minecraft:ender_eye"
+  },
+  "C": {
+   "item": "chromeneon:neural_chip"
+  }
+ },
+ "result": {
+  "id": "chromeneon:argus_optics",
+  "count": 1
+ }
+}

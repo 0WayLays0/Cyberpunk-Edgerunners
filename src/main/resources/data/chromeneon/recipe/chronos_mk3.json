@@ -1,0 +1,30 @@
+{
+ "type": "minecraft:crafting_shaped",
+ "category": "misc",
+ "pattern": [
+  "DND",
+  "CMC",
+  "DED"
+ ],
+ "key": {
+  "D": {
+   "item": "minecraft:diamond_block"
+  },
+  "N": {
+   "item": "minecraft:nether_star"
+  },
+  "C": {
+   "item": "chromeneon:neural_chip"
+  },
+  "M": {
+   "item": "chromeneon:chronos_mk2"
+  },
+  "E": {
+   "item": "minecraft:echo_shard"
+  }
+ },
+ "result": {
+  "id": "chromeneon:chronos_mk3",
+  "count": 1
+ }
+}

@@ -135,10 +135,18 @@ public final class CyberwareService {
 
     /** Uses the first installed implant of a kind (keys), and reports the outcome. */
     public static UseResult use(ServerPlayer player, Implant implant) {
-        Optional<ImplantContext> ctx = Cyberware.first(player, implant);
-        if (ctx.isEmpty()) return UseResult.NOT_INSTALLED;
-        UseResult result = implant.use(ctx.get());
-        if (result.ok()) NeoForge.EVENT_BUS.post(new CyberwareEvent.Used(player, ctx.get().installed().id(), ctx.get().slot()));
+        return Cyberware.first(player, implant).map(ctx -> use(player, implant, ctx)).orElse(UseResult.NOT_INSTALLED);
+    }
+
+    /** Uses the first installed implant of a class, whatever its model (the accelerator key). */
+    public static UseResult use(ServerPlayer player, Class<? extends Implant> type) {
+        return Cyberware.ofType(player, type).stream().findFirst()
+                .map(f -> use(player, f.implant(), f.ctx())).orElse(UseResult.NOT_INSTALLED);
+    }
+
+    private static UseResult use(ServerPlayer player, Implant implant, ImplantContext ctx) {
+        UseResult result = implant.use(ctx);
+        if (result.ok()) NeoForge.EVENT_BUS.post(new CyberwareEvent.Used(player, ctx.installed().id(), ctx.slot()));
         CyberData.sync(player);
         return result;
     }

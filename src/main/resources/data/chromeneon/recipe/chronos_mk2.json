@@ -1,0 +1,27 @@
+{
+ "type": "minecraft:crafting_shaped",
+ "category": "misc",
+ "pattern": [
+  "GCG",
+  "CMC",
+  "GAG"
+ ],
+ "key": {
+  "G": {
+   "item": "minecraft:gold_block"
+  },
+  "C": {
+   "item": "chromeneon:neural_chip"
+  },
+  "M": {
+   "item": "chromeneon:chronos_mk1"
+  },
+  "A": {
+   "item": "minecraft:amethyst_shard"
+  }
+ },
+ "result": {
+  "id": "chromeneon:chronos_mk2",
+  "count": 1
+ }
+}

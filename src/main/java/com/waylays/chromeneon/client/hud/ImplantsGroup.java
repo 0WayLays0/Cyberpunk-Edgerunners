@@ -12,6 +12,7 @@ import com.waylays.chromeneon.common.config.ServerConfig;
 import com.waylays.chromeneon.common.cyberware.CyberwareLoadout;
 import com.waylays.chromeneon.common.cyberware.Implant;
 import com.waylays.chromeneon.common.cyberware.ImplantState;
+import com.waylays.chromeneon.common.cyberware.implants.ChronosAccelerator;
 import com.waylays.chromeneon.common.registry.ModImplants;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.gui.GuiGraphics;
@@ -36,7 +37,7 @@ public final class ImplantsGroup extends HudGroup {
 
     private static List<Dial> dials() {
         List<Dial> d = new ArrayList<>();
-        add(d, ModImplants.CHRONOS_ACCELERATOR.get(), HudIcon.CHRONO, ChromeKeys.ACCELERATOR);
+        ClientCyberware.accelerator().ifPresent(f -> d.add(new Dial(f.implant(), HudIcon.CHRONO, ChromeKeys.ACCELERATOR)));
         add(d, ModImplants.REAPER_BLADES.get(), HudIcon.BLADE, ChromeKeys.BLADES);
         add(d, ModImplants.ARGUS_OPTICS.get(), HudIcon.EYE, ChromeKeys.ANALYSIS);
         add(d, ModImplants.SPRING_TENDONS.get(), HudIcon.SPRING, null);
@@ -89,12 +90,13 @@ public final class ImplantsGroup extends HudGroup {
         float fill = 0F;
         int fillColor = color;
         Implant implant = dial.implant();
-        if (implant == ModImplants.CHRONOS_ACCELERATOR.get()) {
+        if (implant instanceof ChronosAccelerator) {
+            // Both spans start at the last change (start, then end): the ring is right whatever the model and reductions
             if (s.active && now < s.activeUntil) {
-                fill = (s.activeUntil - now) / (float) ServerConfig.ACCEL_DURATION.get();
+                fill = (s.activeUntil - now) / (float) Math.max(1L, s.activeUntil - s.changedAt);
                 fillColor = NeonPalette.VIOLET_HOT;
             } else if (now < s.cooldownUntil) {
-                fill = 1F - (s.cooldownUntil - now) / (float) ServerConfig.ACCEL_COOLDOWN.get();
+                fill = 1F - (s.cooldownUntil - now) / (float) Math.max(1L, s.cooldownUntil - s.changedAt);
                 fillColor = NeonPalette.LAVENDER;
             } else fill = 1F;
         } else if (implant == ModImplants.REAPER_BLADES.get()) {

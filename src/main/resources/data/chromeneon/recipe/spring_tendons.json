@@ -1,0 +1,27 @@
+{
+ "type": "minecraft:crafting_shaped",
+ "category": "misc",
+ "pattern": [
+  "P P",
+  "ICI",
+  "S S"
+ ],
+ "key": {
+  "P": {
+   "item": "minecraft:piston"
+  },
+  "I": {
+   "item": "minecraft:iron_ingot"
+  },
+  "C": {
+   "item": "chromeneon:neural_chip"
+  },
+  "S": {
+   "item": "minecraft:slime_ball"
+  }
+ },
+ "result": {
+  "id": "chromeneon:spring_tendons",
+  "count": 1
+ }
+}

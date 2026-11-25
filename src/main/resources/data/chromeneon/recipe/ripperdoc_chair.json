@@ -1,0 +1,27 @@
+{
+ "type": "minecraft:crafting_shaped",
+ "category": "misc",
+ "pattern": [
+  "  I",
+  "WWB",
+  "ICI"
+ ],
+ "key": {
+  "I": {
+   "item": "minecraft:iron_block"
+  },
+  "W": {
+   "item": "minecraft:black_wool"
+  },
+  "B": {
+   "item": "minecraft:redstone_lamp"
+  },
+  "C": {
+   "item": "chromeneon:neural_chip"
+  }
+ },
+ "result": {
+  "id": "chromeneon:ripperdoc_chair",
+  "count": 1
+ }
+}
