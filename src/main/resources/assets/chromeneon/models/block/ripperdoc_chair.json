@@ -1,0 +1,18 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {"particle": "chromeneon:block/ripperdoc_chair_frame", "frame": "chromeneon:block/ripperdoc_chair_frame", "pad": "chromeneon:block/ripperdoc_chair_pad"},
+  "elements": [
+    {"from": [6, 0, 6], "to": [10, 6, 10], "faces": {
+      "north": {"uv": [6, 10, 10, 16], "texture": "#frame"}, "south": {"uv": [6, 10, 10, 16], "texture": "#frame"},
+      "east": {"uv": [6, 10, 10, 16], "texture": "#frame"}, "west": {"uv": [6, 10, 10, 16], "texture": "#frame"},
+      "down": {"uv": [6, 6, 10, 10], "texture": "#frame", "cullface": "down"}}},
+    {"from": [2, 6, 2], "to": [14, 9, 14], "faces": {
+      "north": {"uv": [2, 7, 14, 10], "texture": "#frame"}, "south": {"uv": [2, 7, 14, 10], "texture": "#frame"},
+      "east": {"uv": [2, 7, 14, 10], "texture": "#frame"}, "west": {"uv": [2, 7, 14, 10], "texture": "#frame"},
+      "up": {"uv": [2, 2, 14, 14], "texture": "#pad"}, "down": {"uv": [2, 2, 14, 14], "texture": "#frame"}}},
+    {"from": [2, 9, 12], "to": [14, 16, 14], "faces": {
+      "north": {"uv": [2, 0, 14, 7], "texture": "#pad"}, "south": {"uv": [2, 0, 14, 7], "texture": "#frame"},
+      "east": {"uv": [12, 0, 14, 7], "texture": "#frame"}, "west": {"uv": [2, 0, 4, 7], "texture": "#frame"},
+      "up": {"uv": [2, 12, 14, 14], "texture": "#frame"}}}
+  ]
+}

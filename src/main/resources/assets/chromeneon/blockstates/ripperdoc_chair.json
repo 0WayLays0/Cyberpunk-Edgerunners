@@ -1,0 +1,5 @@
+{"variants":{
+ "facing=north":{"model":"chromeneon:block/ripperdoc_chair"},
+ "facing=east":{"model":"chromeneon:block/ripperdoc_chair","y":90},
+ "facing=south":{"model":"chromeneon:block/ripperdoc_chair","y":180},
+ "facing=west":{"model":"chromeneon:block/ripperdoc_chair","y":270}}}
