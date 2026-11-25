@@ -2,7 +2,11 @@ package com.waylays.chromeneon.server;
 
 import com.waylays.chromeneon.ChromeNeon;
 import com.waylays.chromeneon.common.config.ServerConfig;
+import com.waylays.chromeneon.common.hud.HudMessages;
+import com.waylays.chromeneon.common.hud.NotificationKind;
 import com.waylays.chromeneon.common.player.CyberData;
+import com.waylays.chromeneon.common.player.CyberStats;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -26,7 +30,12 @@ public final class CyberServerEvents {
 
     @SubscribeEvent
     public static void onLogin(PlayerEvent.PlayerLoggedInEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) CyberData.sync(player);
+        if (event.getEntity() instanceof ServerPlayer player) {
+            CyberData.sync(player);
+            CyberStats stats = CyberData.stats(player);
+            HudMessages.notify(player, NotificationKind.SYSTEM_ON, Component.translatable("chromeneon.notify.boot.title"),
+                    Component.translatable("chromeneon.notify.boot.message", stats.humanity(), stats.maxHumanity(), stats.ramCapacity()));
+        }
     }
 
     @SubscribeEvent

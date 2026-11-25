@@ -11,31 +11,27 @@ l'IA de biopuce. Mod indépendant (aucune dépendance à Arcanes Oubliés ni à 
 | Java | 21 |
 | Build | Gradle 9.2.1 (wrapper) + ModDevGradle 2.0.148 |
 
-## État : phase 1 terminée (fondations)
+## État : phase 2 terminée (HUD et interface)
 
-Voir [docs/ROADMAP.md](docs/ROADMAP.md) pour les phases et [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) pour la
-structure du code.
+![HUD Chrome Néon](docs/screenshots/02_scan_entity.png)
 
-Ce qui existe et fonctionne réellement :
+- **Phase 1, fondations** : registres, architecture du corps (7 emplacements), règles d'installation, données
+  persistantes du joueur, RAM, synchronisation, configurations, commandes. Voir [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+- **Phase 2, HUD** : santé en chevrons, armure, cellules de RAM, horloge du monde, indicateurs de statut,
+  mini-carte réelle, ciblage et scan de vraies cibles, notifications à priorités, appel entrant, effets de dégâts,
+  de santé critique et de glitch, deux polices et 42 icônes originales, entièrement configurable.
+  Voir [docs/HUD.md](docs/HUD.md) et les [captures réelles](docs/screenshots/).
 
-- **Registre des implants** `chromeneon:implant`, synchronisé client/serveur, prêt à recevoir les implants (phase 3).
-  Il est volontairement vide : aucun implant factice.
-- **Architecture du corps** : 7 emplacements (Système, Optiques, Bras, Jambes, Dermique, Circulatoire, Biopuce),
-  chacun avec un nombre de sockets.
-- **Règles d'installation** : implant inconnu, déjà installé, emplacement plein, conflit (groupes exclusifs, ex. un
-  seul système d'exploitation), humanité insuffisante. Une installation refusée ne modifie rien.
-- **Données persistantes du joueur** (attachment NeoForge) : implants par emplacement, implants désactivés, RAM.
-  Elles survivent à la mort et à la déconnexion. L'humanité est calculée à partir des implants, pas stockée.
-- **RAM** : cellules entières, capacité = base + bonus des implants actifs (plafonnée), régénération d'une cellule
-  par période configurable, consommation tout-ou-rien.
-- **Synchronisation** serveur → client à la connexion, à la réapparition, au changement de dimension et à chaque
-  changement.
-- **Configurations** : serveur (humanité, RAM) et client (HUD activé, opacité, glitch), éditables en jeu.
-- **Contenu** : Puce neuronale (emblème du mod), Scanner de diagnostic (affiche l'état cyberware du joueur),
-  Fauteuil de charcudoc (bloc orientable, encore inerte).
-- **HUD** : premier élément, les cellules de RAM à droite de la barre d'action, angles coupés, désactivable.
-- **Commande** `/chromeneon` : `status [joueur]`, `ram set <joueur> <cellules>`, `implant install|remove <joueur> <id>`
-  (sauf `status` sur soi, réservée aux opérateurs).
+La suite est dans [docs/ROADMAP.md](docs/ROADMAP.md), avec ce qui n'est pas encore développé.
+
+### Touches (Options > Commandes > Chrome Néon)
+
+| Touche | Action |
+|---|---|
+| V (maintenir) | scanner la cible visée |
+| B / accroupi + B | placer / retirer un marqueur de carte |
+| Y / N | accepter / refuser un appel |
+| H | afficher / masquer le HUD |
 
 ## Compiler
 
@@ -62,9 +58,18 @@ sur le gestionnaire de tick réel, sauvegarde et rechargement des données d'un 
 ./gradlew runClient
 ```
 Client de développement. En jeu : onglet créatif « Chrome Néon », clic droit avec le Scanner de diagnostic,
-`/chromeneon status`, `/chromeneon ram set @s 1` pour voir les cellules de RAM se recharger dans le HUD.
+`/chromeneon status`, `/chromeneon ram set @s 1` pour voir les cellules de RAM se recharger, `/cnhud …` pour
+afficher chaque état du HUD (liste dans [docs/HUD.md](docs/HUD.md)).
+
+```bash
+xvfb-run -a -s "-screen 0 1920x1080x24" ./gradlew runClient -Pchromeneon.autotest=true
+```
+Test automatisé du client : crée un monde, parcourt tous les états du HUD avec de vrais dégâts et de vraies
+cibles, vérifie la disposition à 7 tailles d'écran, mesure le temps de rendu et enregistre les captures dans
+`run/chromeneon-autotest/`. Sur un ordinateur avec écran, lancer sans `xvfb-run`.
 
 ## Assets
 
-Les textures sont générées par `tools/textures.py` (Python 3 + Pillow) avec la palette du HUD.
+Textures, polices et icônes sont générées par `tools/textures.py` et `tools/hud_assets.py` (Python 3 + Pillow)
+avec la palette du HUD.
 Le mod n'utilise que des assets originaux : aucun son, texture ou police tirés de Cyberpunk 2077 ou d'autres jeux.

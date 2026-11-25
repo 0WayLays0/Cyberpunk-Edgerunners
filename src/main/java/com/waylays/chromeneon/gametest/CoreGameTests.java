@@ -3,6 +3,8 @@ package com.waylays.chromeneon.gametest;
 import com.waylays.chromeneon.ChromeNeon;
 import com.waylays.chromeneon.common.block.RipperdocChairBlock;
 import com.waylays.chromeneon.common.config.ServerConfig;
+import com.waylays.chromeneon.common.hud.HudMessages;
+import com.waylays.chromeneon.common.hud.NotificationKind;
 import com.waylays.chromeneon.common.player.CyberData;
 import com.waylays.chromeneon.common.player.PlayerCyberData;
 import com.waylays.chromeneon.common.registry.ModBlocks;
@@ -15,6 +17,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerPlayer;
@@ -85,6 +88,15 @@ public final class CoreGameTests {
         Tag encoded = PlayerCyberData.CODEC.encodeStart(NbtOps.INSTANCE, data).getOrThrow();
         PlayerCyberData decoded = PlayerCyberData.CODEC.parse(NbtOps.INSTANCE, encoded).getOrThrow();
         helper.assertTrue(decoded.ram().cells() == 3, "codec round trip");
+        helper.succeed();
+    }
+
+    /** Server systems can notify any player: connections without the mod's channel are skipped, not crashed. */
+    @GameTest(template = "platform")
+    public static void hudMessagesAreSafeForEveryPlayer(GameTestHelper helper) {
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        HudMessages.notify(player, NotificationKind.ALERT, Component.literal("test"), Component.literal("message"));
+        CyberData.sync(player);
         helper.succeed();
     }
 }

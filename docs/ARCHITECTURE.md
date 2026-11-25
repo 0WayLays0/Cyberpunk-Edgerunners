@@ -13,9 +13,19 @@ common/
   player/                  PlayerCyberData (données persistantes), CyberStats (valeurs dérivées),
                            CyberData (accès serveur + sync), CyberReport, SyncedCyberState (miroir côté client)
   network/                 ChromeNetwork (enregistrement, version de protocole), payloads
+  hud/                     HudMessages (API serveur des notifications), NotificationKind, HudNotifyPayload,
+                           ClientHudBridge (point de branchement du client, sans classe client)
   item/, block/            classes d'items et de blocs avec comportement
 server/                    événements serveur (tick RAM, sync) et commandes
-client/                    point d'entrée @Mod(dist = CLIENT), hud/ (palette, primitives de dessin, couches)
+client/                    point d'entrée @Mod(dist = CLIENT)
+  hud/                     ChromeHud (API), HudEvents, HudLayers, HudGroup (groupe positionné), HudFrame, HudTime
+    theme/ draw/ anim/     palette, polices, icônes ; polygones et primitives ; easing et lissage
+    vitals/ status/        santé, armure, RAM ; effets et états anormaux
+    nav/                   mini-carte (échantillonnage du terrain, rendu, marqueurs, impulsions), horloge
+    scan/                  ciblage, projection monde→écran, fournisseurs de scan, superposition
+    notify/                file de notifications, cartes, appel entrant
+    fx/                    glitch, déchirure d'écran, dégâts et santé critique, séquence de démarrage
+  input/ command/ debug/   touches, /cnhud, test automatisé du client et mesures
 gametest/                  GameTests exécutés sur un serveur réel
 src/test/                  tests JUnit de la logique pure
 tools/                     générateurs d'assets
@@ -42,7 +52,7 @@ tools/                     générateurs d'assets
 
 | Phase | Ajout | Où |
 |---|---|---|
-| 2 | Composants du HUD (santé, armure, mini-carte, alertes, glitch) | `client/hud/`, une couche par composant, primitives dans `HudDraw` |
+| 2 | HUD | fait : voir docs/HUD.md |
 | 3 | Implants concrets | sous-classes d'`Implant` enregistrées dans `ModImplants.IMPLANTS`, logique par emplacement dans `common/cyberware/<emplacement>/` |
 | 3 | Installation au fauteuil | block entity dans `ModBlockEntities`, menu dans `ModMenus`, paquet C→S validé par `CyberwareLoadout.install` |
 | 4 | Hacks | registre `chromeneon:quickhack`, coût en RAM via `RamPool.tryConsume`, cibles via une capability/interface côté serveur |

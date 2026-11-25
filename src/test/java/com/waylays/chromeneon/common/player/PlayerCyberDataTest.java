@@ -22,9 +22,9 @@ class PlayerCyberDataTest {
     void disabledImplantsKeepTheirHumanityCostButGiveNoRam() {
         PlayerCyberData data = new PlayerCyberData();
         data.loadout().install(DECK, LOOKUP, 100);
-        assertEquals(new CyberStats(85, 100, 0, 8), CyberStats.of(data, LOOKUP, 100, 4, 16));
+        assertEquals(new CyberStats(85, 100, 0, 8, 0, 60), CyberStats.of(data, LOOKUP, 100, 4, 16, 60));
         assertTrue(data.setEnabled(DECK, false));
-        assertEquals(new CyberStats(85, 100, 0, 4), CyberStats.of(data, LOOKUP, 100, 4, 16));
+        assertEquals(new CyberStats(85, 100, 0, 4, 0, 60), CyberStats.of(data, LOOKUP, 100, 4, 16, 60));
         assertEquals(6, CyberStats.ramCapacity(new PlayerCyberData(), LOOKUP, 10, 6), "capped");
     }
 

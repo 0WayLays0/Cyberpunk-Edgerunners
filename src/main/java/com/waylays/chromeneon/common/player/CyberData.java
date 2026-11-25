@@ -18,7 +18,7 @@ public final class CyberData {
 
     public static CyberStats stats(ServerPlayer player) {
         return CyberStats.of(get(player), ModImplants::get, ServerConfig.MAX_HUMANITY.get(),
-                ServerConfig.BASE_RAM.get(), ServerConfig.RAM_CAP.get());
+                ServerConfig.BASE_RAM.get(), ServerConfig.RAM_CAP.get(), ServerConfig.RAM_REGEN_TICKS.get());
     }
 
     public static int ramCapacity(ServerPlayer player) {

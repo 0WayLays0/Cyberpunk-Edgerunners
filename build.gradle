@@ -23,6 +23,10 @@ neoForge {
         }
         client {
             client()
+            // Automated HUD test (client/debug/HudAutoTest), only with -Pchromeneon.autotest=true
+            if (project.hasProperty('chromeneon.autotest')) {
+                systemProperty 'chromeneon.autotest', project.property('chromeneon.autotest').toString()
+            }
         }
         server {
             server()

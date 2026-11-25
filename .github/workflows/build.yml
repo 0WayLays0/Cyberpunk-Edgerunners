@@ -16,3 +16,11 @@ jobs:
         with:
           name: chrome-neon
           path: build/libs/*.jar
+      # Automated HUD test on a real client (software rendering in a virtual screen)
+      - run: sudo apt-get update && sudo apt-get install -y xvfb libgl1-mesa-dri
+      - run: xvfb-run -a -s "-screen 0 1920x1080x24" ./gradlew runClient -Pchromeneon.autotest=true --console=plain
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hud-screenshots
+          path: run/chromeneon-autotest/

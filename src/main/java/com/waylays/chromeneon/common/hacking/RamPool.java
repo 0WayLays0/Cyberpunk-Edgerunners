@@ -16,6 +16,11 @@ public final class RamPool {
         return cells;
     }
 
+    /** Ticks accumulated toward the next cell (0 when full). */
+    public int regenProgress() {
+        return regenProgress;
+    }
+
     /** Advances regeneration by one tick. Returns true when the number of cells changed. */
     public boolean tick(int capacity, int ticksPerCell) {
         if (cells > capacity) {
