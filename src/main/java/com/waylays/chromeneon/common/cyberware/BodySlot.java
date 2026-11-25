@@ -1,48 +1,38 @@
 package com.waylays.chromeneon.common.cyberware;
 
-import com.mojang.serialization.Codec;
-import net.minecraft.util.StringRepresentable;
+import com.waylays.chromeneon.common.registry.ModBodySlots;
+import net.minecraft.resources.ResourceLocation;
 
 /**
- * The cybernetic architecture of the body. Each slot is a subsystem with a fixed number of sockets; the logic of
- * each subsystem (time dilation for SYSTEM, scanner for OPTICS, ...) lives with the implants that fill it.
+ * A place in the body that holds cyberware, registered in {@code chromeneon:body_slot} (other mods can add their
+ * own). It has a number of sockets and a region, used to draw it on the body diagram.
  */
-public enum BodySlot implements StringRepresentable {
-    /** Operating system: RAM management, time accelerator, core functions. */
-    SYSTEM("system", 3),
-    /** Optics: scanner, zoom, target analysis. */
-    OPTICS("optics", 1),
-    /** Arms: blades and integrated tools. */
-    ARMS("arms", 1),
-    /** Legs: double jump and mobility. */
-    LEGS("legs", 1),
-    /** Integumentary system: plating and damage handling. */
-    INTEGUMENTARY("integumentary", 3),
-    /** Circulatory system: biomonitor, recovery, emergency pumps. */
-    CIRCULATORY("circulatory", 3),
-    /** Biochip: the onboard AI (VESPER) and software abilities. */
-    BIOCHIP("biochip", 1);
+public final class BodySlot {
+    /** Where the slot sits on the body diagram. */
+    public enum Region { HEAD, EYES, SPINE, HEART, SKIN, LEFT_ARM, RIGHT_ARM, LEGS }
 
-    public static final Codec<BodySlot> CODEC = StringRepresentable.fromEnum(BodySlot::values);
-
-    private final String name;
     private final int sockets;
+    private final Region region;
 
-    BodySlot(String name, int sockets) {
-        this.name = name;
+    public BodySlot(int sockets, Region region) {
+        if (sockets < 1) throw new IllegalArgumentException("a body slot needs at least one socket");
         this.sockets = sockets;
+        this.region = region;
     }
 
     public int sockets() {
         return sockets;
     }
 
-    public String translationKey() {
-        return "chromeneon.slot." + name;
+    public Region region() {
+        return region;
     }
 
-    @Override
-    public String getSerializedName() {
-        return name;
+    public ResourceLocation id() {
+        return ModBodySlots.REGISTRY.getKey(this);
+    }
+
+    public static String translationKey(ResourceLocation id) {
+        return "chromeneon.slot." + id.getNamespace() + "." + id.getPath();
     }
 }

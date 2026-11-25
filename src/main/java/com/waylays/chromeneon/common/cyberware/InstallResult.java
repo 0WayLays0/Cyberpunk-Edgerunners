@@ -1,19 +1,29 @@
 package com.waylays.chromeneon.common.cyberware;
 
-/** Why an implant can or cannot be installed. Each refusal has its own message for the ripperdoc interface. */
+import java.util.Locale;
+
+/** Why a cyberware operation can or cannot be done. Each refusal has its own message in the interfaces. */
 public enum InstallResult {
     OK,
     UNKNOWN_IMPLANT,
-    ALREADY_INSTALLED,
+    UNKNOWN_SLOT,
+    WRONG_SLOT,
     SLOT_FULL,
+    ALREADY_INSTALLED,
     CONFLICT,
-    NOT_ENOUGH_HUMANITY;
+    NOT_ENOUGH_HUMANITY,
+    NOT_ENOUGH_CAPACITY,
+    NOT_INSTALLED,
+    NOT_SEATED,
+    IN_COMBAT,
+    NO_ITEM,
+    INVENTORY_FULL;
 
     public boolean ok() {
         return this == OK;
     }
 
     public String translationKey() {
-        return "chromeneon.install." + name().toLowerCase(java.util.Locale.ROOT);
+        return "chromeneon.install." + name().toLowerCase(Locale.ROOT);
     }
 }

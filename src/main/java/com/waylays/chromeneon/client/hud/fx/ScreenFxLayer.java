@@ -27,6 +27,7 @@ public final class ScreenFxLayer implements LayeredDraw.Layer {
         long start = System.nanoTime();
         float strength = ChromeHud.glitch().strength(f.now) * f.fx;
         if (strength > 0F) glitch.render(g, f, ChromeHud.glitch().bands(f.now), strength);
+        com.waylays.chromeneon.client.cyberware.DilationFx.render(g, f);
         ChromeHud.damage().render(g, f, mc.player, ChromeHud.vitals().criticalSeverity());
         ChromeHud.boot().render(g, f);
         HudPerf.record("screen_fx", System.nanoTime() - start);

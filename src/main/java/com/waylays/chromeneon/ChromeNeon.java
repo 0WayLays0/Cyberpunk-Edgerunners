@@ -5,6 +5,9 @@ import com.waylays.chromeneon.common.config.ClientConfig;
 import com.waylays.chromeneon.common.config.ServerConfig;
 import com.waylays.chromeneon.common.network.ChromeNetwork;
 import com.waylays.chromeneon.common.registry.ModAttachments;
+import com.waylays.chromeneon.common.registry.ModBodySlots;
+import com.waylays.chromeneon.common.registry.ModEntities;
+import com.waylays.chromeneon.common.registry.ModSounds;
 import com.waylays.chromeneon.common.registry.ModBlockEntities;
 import com.waylays.chromeneon.common.registry.ModBlocks;
 import com.waylays.chromeneon.common.registry.ModCreativeTabs;
@@ -29,7 +32,10 @@ public final class ChromeNeon {
     public static final Logger LOGGER = LogUtils.getLogger();
 
     public ChromeNeon(IEventBus modBus, ModContainer container) {
+        ModBodySlots.register(modBus);
         ModImplants.register(modBus);
+        ModSounds.SOUNDS.register(modBus);
+        ModEntities.ENTITIES.register(modBus);
         ModBlocks.BLOCKS.register(modBus);
         ModItems.ITEMS.register(modBus);
         ModBlockEntities.BLOCK_ENTITIES.register(modBus);

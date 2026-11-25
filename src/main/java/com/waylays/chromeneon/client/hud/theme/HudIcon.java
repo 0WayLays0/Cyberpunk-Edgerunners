@@ -15,7 +15,7 @@ import net.minecraft.resources.ResourceLocation;
 public enum HudIcon {
     HEART_PULSE, SHIELD, CHIP, SPEED, SLOW, STRENGTH, WEAKNESS, REGEN, POISON, WITHER, FIRE, FIRE_SHIELD, EYE, EYE_OFF,
     GHOST, WATER, JUMP, FEATHER, LEVITATE, HUNGER, NAUSEA, GLOW, LUCK, HASTE, FATIGUE, ABSORB, FREEZE, AIR, GOOD, BAD,
-    INFO, CHECK, CROSS, POWER, SCAN, CALL, AVATAR, MARKER, HEART, FLAG, UPLOAD, HAZARD;
+    INFO, CHECK, CROSS, POWER, SCAN, CALL, AVATAR, MARKER, HEART, FLAG, UPLOAD, HAZARD, CHRONO, BLADE, SPRING;
 
     private static final ResourceLocation ATLAS = ChromeNeon.id("textures/gui/hud_icons.png");
     private static final int CELL = 64, ATLAS_W = 512, ATLAS_H = 384, COLUMNS = 8;

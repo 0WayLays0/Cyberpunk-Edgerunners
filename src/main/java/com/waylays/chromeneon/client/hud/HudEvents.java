@@ -1,6 +1,7 @@
 package com.waylays.chromeneon.client.hud;
 
 import com.waylays.chromeneon.ChromeNeon;
+import com.waylays.chromeneon.client.cyberware.ClientCyberware;
 import com.waylays.chromeneon.client.hud.nav.MinimapDisplay;
 import com.waylays.chromeneon.client.hud.notify.NotificationsGroup;
 import com.waylays.chromeneon.client.input.ChromeKeys;
@@ -35,7 +36,16 @@ public final class HudEvents {
         ChromeHud.ram().tick();
         if (player == null || mc.level == null) return;
         keys(mc, player);
-        ChromeHud.target().tick(mc, ChromeKeys.SCAN.isDown());
+        // Targeting and scanning are the optics' work: without them online, there is no target
+        if (ClientCyberware.opticsOnline()) {
+            ChromeHud.target().tick(mc, ChromeKeys.SCAN.isDown());
+        } else {
+            ChromeHud.target().clear();
+            if (ChromeKeys.SCAN.consumeClick()) {
+                ChromeHud.notify(NotificationKind.WARNING, Component.translatable("chromeneon.hud.optics.required"),
+                        Component.translatable("chromeneon.hud.optics.required.message"));
+            }
+        }
         ChromeHud.calls().tick(ChromeHud.calls().ringing() && ChromeKeys.ACCEPT_CALL.consumeClick(),
                 ChromeHud.calls().ringing() && ChromeKeys.DECLINE_CALL.consumeClick());
         int max = ClientConfig.NOTIFICATIONS.enabled().get() ? ClientConfig.NOTIFICATIONS_MAX.get() : 0;
@@ -112,6 +122,8 @@ public final class HudEvents {
     @SubscribeEvent
     public static void onLogout(ClientPlayerNetworkEvent.LoggingOut event) {
         SyncedCyberState.clear();
+        ClientCyberware.clear();
+        com.waylays.chromeneon.client.cyberware.BladeAnimation.clear();
         ChromeHud.reset();
     }
 }

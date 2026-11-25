@@ -12,7 +12,9 @@ import com.waylays.chromeneon.common.hud.NotificationKind;
 import com.waylays.chromeneon.common.player.CyberData;
 import com.waylays.chromeneon.common.player.CyberReport;
 import com.waylays.chromeneon.common.player.PlayerCyberData;
+import com.waylays.chromeneon.common.registry.ModBodySlots;
 import com.waylays.chromeneon.common.registry.ModImplants;
+import com.waylays.chromeneon.common.cyberware.CyberwareService;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
@@ -51,15 +53,22 @@ public final class ChromeCommands {
                                         .then(Commands.argument("message", StringArgumentType.greedyString())
                                                 .executes(ChromeCommands::notifyPlayers)))))
                 .then(Commands.literal("implant").requires(src -> src.hasPermission(2))
-                        .then(Commands.literal("install").then(implantArgs(true)))
-                        .then(Commands.literal("remove").then(implantArgs(false)))));
-    }
-
-    private static com.mojang.brigadier.builder.RequiredArgumentBuilder<CommandSourceStack, ?> implantArgs(boolean install) {
-        return Commands.argument("target", EntityArgument.player())
-                .then(Commands.argument("implant", ResourceLocationArgument.id())
-                        .suggests((ctx, builder) -> SharedSuggestionProvider.suggestResource(ModImplants.REGISTRY.keySet(), builder))
-                        .executes(ctx -> install ? install(ctx) : remove(ctx)));
+                        .then(Commands.literal("install").then(Commands.argument("target", EntityArgument.player())
+                                .then(Commands.argument("implant", ResourceLocationArgument.id())
+                                        .suggests((ctx, b) -> SharedSuggestionProvider.suggestResource(ModImplants.REGISTRY.keySet(), b))
+                                        .then(Commands.argument("slot", ResourceLocationArgument.id())
+                                                .suggests((ctx, b) -> SharedSuggestionProvider.suggestResource(ModBodySlots.REGISTRY.keySet(), b))
+                                                .executes(ChromeCommands::install)))))
+                        .then(Commands.literal("remove").then(Commands.argument("target", EntityArgument.player())
+                                .then(Commands.argument("slot", ResourceLocationArgument.id())
+                                        .suggests((ctx, b) -> SharedSuggestionProvider.suggestResource(ModBodySlots.REGISTRY.keySet(), b))
+                                        .executes(ctx -> remove(ctx, 0))
+                                        .then(Commands.argument("index", IntegerArgumentType.integer(0))
+                                                .executes(ctx -> remove(ctx, IntegerArgumentType.getInteger(ctx, "index"))))))))
+                .then(Commands.literal("capacity").requires(src -> src.hasPermission(2))
+                        .then(Commands.argument("target", EntityArgument.player())
+                                .then(Commands.argument("bonus", IntegerArgumentType.integer(0))
+                                        .executes(ChromeCommands::setCapacity)))));
     }
 
     private static int notifyPlayers(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
@@ -96,32 +105,38 @@ public final class ChromeCommands {
     private static int install(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
         ResourceLocation id = ResourceLocationArgument.getId(ctx, "implant");
-        InstallResult result = CyberData.get(target).loadout().install(id, ModImplants::get, ServerConfig.MAX_HUMANITY.get());
+        ResourceLocation slot = ResourceLocationArgument.getId(ctx, "slot");
+        InstallResult result = CyberwareService.grant(target, id, slot);
         if (!result.ok()) {
             ctx.getSource().sendFailure(Component.translatable(result.translationKey(), id.toString()));
             return 0;
         }
-        CyberData.sync(target);
         HudMessages.notify(target, NotificationKind.CYBERWARE, Component.translatable("chromeneon.notify.cyberware.installed"),
-                Component.literal(id.toString()));
-        ctx.getSource().sendSuccess(() -> Component.translatable("chromeneon.command.installed", id.toString(),
-                target.getDisplayName()), true);
+                Component.translatable("chromeneon.implant." + id.getPath()));
+        ctx.getSource().sendSuccess(() -> Component.translatable("chromeneon.command.installed", id.toString(), target.getDisplayName()), true);
         return 1;
     }
 
-    private static int remove(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+    private static int remove(CommandContext<CommandSourceStack> ctx, int index) throws CommandSyntaxException {
         ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
-        ResourceLocation id = ResourceLocationArgument.getId(ctx, "implant");
-        PlayerCyberData data = CyberData.get(target);
-        if (!data.uninstall(id)) {
-            ctx.getSource().sendFailure(Component.translatable("chromeneon.command.not_installed", id.toString()));
+        ResourceLocation slot = ResourceLocationArgument.getId(ctx, "slot");
+        InstallResult result = CyberwareService.revoke(target, slot, index);
+        if (!result.ok()) {
+            ctx.getSource().sendFailure(Component.translatable("chromeneon.command.not_installed", slot.toString()));
             return 0;
         }
+        ctx.getSource().sendSuccess(() -> Component.translatable("chromeneon.command.removed", slot.toString(), target.getDisplayName()), true);
+        return 1;
+    }
+
+    private static int setCapacity(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        ServerPlayer target = EntityArgument.getPlayer(ctx, "target");
+        int bonus = Math.min(IntegerArgumentType.getInteger(ctx, "bonus"), ServerConfig.CAPACITY_BONUS_MAX.get());
+        PlayerCyberData data = CyberData.get(target);
+        data.setCapacityBonus(bonus);
         CyberData.sync(target);
-        HudMessages.notify(target, NotificationKind.SYSTEM_OFF, Component.translatable("chromeneon.notify.cyberware.removed"),
-                Component.literal(id.toString()));
-        ctx.getSource().sendSuccess(() -> Component.translatable("chromeneon.command.removed", id.toString(),
-                target.getDisplayName()), true);
+        ctx.getSource().sendSuccess(() -> Component.translatable("chromeneon.command.capacity", target.getDisplayName(),
+                CyberwareService.capacity(data)), true);
         return 1;
     }
 }

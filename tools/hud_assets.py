@@ -185,6 +185,12 @@ ICONS = {
     "FLAG": lambda p: (p.line((.16, .04), (.16, .96)), p.line((.16, .1), (.86, .1), (.7, .3), (.86, .5), (.16, .5))),
     "UPLOAD": lambda p: (p.line((.2, .36), (.5, .06), (.8, .36)), p.line((.5, .08), (.5, .64)), p.line((.08, .62), (.08, .92), (.92, .92), (.92, .62))),
     "HAZARD": lambda p: (tri(p), p.line((.06, .88), (.94, .88), w=W)),
+    "CHRONO": lambda p: (p.circle(.5, .54, .4), p.line((.5, .54), (.5, .3)), p.line((.5, .54), (.68, .64)),
+                         p.line((.38, .04), (.62, .04)), p.line((.5, .04), (.5, .14))),
+    "BLADE": lambda p: (p.poly((.18, .92), (.3, .8), (.88, .06), (.94, .12), (.4, .9), (.3, .98)),
+                        p.line((.1, .7), (.34, .94), w=12)),
+    "SPRING": lambda p: (p.line((.3, .1), (.7, .2), (.3, .32), (.7, .44), (.3, .56), (.7, .68), (.3, .8), w=14),
+                         p.line((.18, .92), (.82, .92))),
 }
 
 
@@ -203,7 +209,62 @@ def icons():
     return names, atlas.size
 
 
+def body():
+    """Front wireframe of a body for the cyberware interfaces: outline, joints, panel and circuit lines. 256x512."""
+    S = 4
+    W, H = 256 * S, 512 * S
+    img = Image.new("L", (W, H), 0)
+    d = ImageDraw.Draw(img)
+
+    def pt(x, y):
+        return (x * W, y * H)
+
+    def poly(points, w=3, fill=None):
+        pts = [pt(*p) for p in points]
+        if fill is not None:
+            d.polygon(pts, fill=fill)
+        d.line(pts + [pts[0]], fill=255, width=w * S, joint="curve")
+
+    def line(points, w=1, v=150):
+        d.line([pt(*p) for p in points], fill=v, width=max(1, w * S))
+
+    def joint(x, y, r=0.018):
+        (cx, cy) = pt(x, y)
+        rr = r * W
+        d.ellipse((cx - rr, cy - rr, cx + rr, cy + rr), outline=255, width=2 * S)
+
+    fill = 28
+    poly([(.44, .02), (.56, .02), (.6, .06), (.6, .12), (.55, .155), (.45, .155), (.4, .12), (.4, .06)], fill=fill)  # head
+    poly([(.46, .155), (.54, .155), (.55, .185), (.45, .185)], w=2, fill=fill)  # neck
+    poly([(.3, .2), (.7, .2), (.66, .33), (.62, .46), (.38, .46), (.34, .33)], fill=fill)  # torso
+    poly([(.38, .46), (.62, .46), (.64, .52), (.36, .52)], w=2, fill=fill)  # pelvis
+    for side in (-1, 1):
+        def m(x):
+            return .5 + side * (x - .5)
+        poly([(m(.7), .2), (m(.78), .22), (m(.8), .36), (m(.73), .36)], fill=fill)  # upper arm
+        poly([(m(.73), .37), (m(.8), .37), (m(.83), .5), (m(.77), .51)], fill=fill)  # forearm
+        poly([(m(.77), .515), (m(.835), .51), (m(.85), .56), (m(.79), .57)], w=2, fill=fill)  # hand
+        poly([(m(.51), .53), (m(.63), .53), (m(.62), .72), (m(.53), .72)], fill=fill)  # thigh
+        poly([(m(.53), .73), (m(.62), .73), (m(.61), .92), (m(.54), .92)], fill=fill)  # shin
+        poly([(m(.535), .93), (m(.615), .93), (m(.64), .97), (m(.53), .97)], w=2, fill=fill)  # foot
+        for jx, jy in ((.75, .21), (.765, .365), (.805, .51), (.575, .725), (.575, .925)):
+            joint(m(jx), jy)
+        line([(m(.62), .24), (m(.55), .3), (m(.55), .42)])
+        line([(m(.58), .56), (m(.575), .7)], v=110)
+        line([(m(.575), .76), (m(.575), .9)], v=110)
+    line([(.5, .2), (.5, .52)], w=1, v=170)  # spine
+    for y in (.25, .29, .33, .37, .41):
+        line([(.47, y), (.53, y)], v=130)
+    line([(.42, .07), (.47, .075)], v=200)
+    line([(.53, .075), (.58, .07)], v=200)  # eyes
+    img = img.resize((256, 512), Image.LANCZOS)
+    out = Image.new("RGBA", img.size, (255, 255, 255, 0))
+    out.putalpha(img)
+    out.save(ROOT / "textures/gui/body.png")
+
+
 if __name__ == "__main__":
     fonts()
+    body()
     names, size = icons()
     print(len(names), "icons", size)

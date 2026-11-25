@@ -15,6 +15,11 @@ public final class ChromeKeys {
     public static final KeyMapping ACCEPT_CALL = key("accept_call", GLFW.GLFW_KEY_Y);
     public static final KeyMapping DECLINE_CALL = key("decline_call", GLFW.GLFW_KEY_N);
     public static final KeyMapping TOGGLE_HUD = key("toggle_hud", GLFW.GLFW_KEY_H);
+    public static final KeyMapping ACCELERATOR = key("accelerator", GLFW.GLFW_KEY_Z);
+    public static final KeyMapping BLADES = key("blades", GLFW.GLFW_KEY_R);
+    public static final KeyMapping ZOOM = key("zoom", GLFW.GLFW_KEY_G);
+    public static final KeyMapping ANALYSIS = key("analysis", GLFW.GLFW_KEY_U);
+    public static final KeyMapping CYBERWARE = key("cyberware", GLFW.GLFW_KEY_K);
 
     private ChromeKeys() {}
 
@@ -28,5 +33,10 @@ public final class ChromeKeys {
         event.register(ACCEPT_CALL);
         event.register(DECLINE_CALL);
         event.register(TOGGLE_HUD);
+        event.register(ACCELERATOR);
+        event.register(BLADES);
+        event.register(ZOOM);
+        event.register(ANALYSIS);
+        event.register(CYBERWARE);
     }
 }

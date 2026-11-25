@@ -22,9 +22,11 @@ public final class HudLayers {
     public static void register(RegisterGuiLayersEvent event) {
         event.registerBelowAll(ChromeNeon.id("screen_fx"), new ScreenFxLayer());
         event.registerAbove(VanillaGuiLayers.CROSSHAIR, ChromeNeon.id("target"), new TargetOverlay());
+        event.registerAbove(ChromeNeon.id("target"), ChromeNeon.id("optics"), new com.waylays.chromeneon.client.cyberware.OpticsOverlay());
         event.registerAbove(VanillaGuiLayers.EFFECTS, ChromeNeon.id("vitals"), new VitalsGroup());
         event.registerAbove(ChromeNeon.id("vitals"), ChromeNeon.id("status"), new StatusGroup());
         event.registerAbove(ChromeNeon.id("status"), ChromeNeon.id("navigation"), new NavigationGroup());
+        event.registerAbove(ChromeNeon.id("navigation"), ChromeNeon.id("implants"), new ImplantsGroup());
         event.registerAbove(VanillaGuiLayers.BOSS_OVERLAY, ChromeNeon.id("notifications"), new NotificationsGroup(ChromeHud.notifications()));
         event.registerAbove(ChromeNeon.id("notifications"), ChromeNeon.id("call"), new CallGroup());
     }

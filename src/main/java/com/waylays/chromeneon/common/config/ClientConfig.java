@@ -23,6 +23,7 @@ public final class ClientConfig {
     public static final Element NAVIGATION;
     public static final Element NOTIFICATIONS;
     public static final Element CALL;
+    public static final Element IMPLANTS;
 
     public static final ModConfigSpec.BooleanValue CLOCK_ENABLED;
     public static final ModConfigSpec.BooleanValue MINIMAP_ENABLED;
@@ -70,6 +71,7 @@ public final class ClientConfig {
         STATUS = Element.define(b, "status", "Active effects and abnormal states.", HudAnchor.TOP_LEFT, 8, 52);
         NAVIGATION = Element.define(b, "navigation", "Minimap and clock.", HudAnchor.TOP_RIGHT, 8, 8);
         NOTIFICATIONS = Element.define(b, "notifications", "System notifications.", HudAnchor.TOP_LEFT, 8, 96);
+        IMPLANTS = Element.define(b, "implants", "Cyberware dials (state, cooldowns, charges).", HudAnchor.BOTTOM_RIGHT, 8, 6);
         CALL = Element.define(b, "call", "Incoming call popup (under the navigation group by default).", HudAnchor.TOP_RIGHT, 8, 131);
 
         b.push("minimap");
